@@ -324,8 +324,99 @@ static std::string build_member_document(const Member &m) {
     std::tm tm{};
     tm = *std::localtime(&tt);
 
+    int month = tm.tm_mon + 1;
+    int year = tm.tm_year + 1900;
+    int next_month = month + 1;
+    int next_year = year;
+    if (next_month == 13) {
+        next_month = 1;
+        ++next_year;
+    }
+
     std::ostringstream date_out;
-    date_out << std::put_time(&tm, "%m.%Y");
+    date_out << std::setfill('0') << std::setw(2) << month << "." << year;
+
+    std::ostringstream next_date_out;
+    next_date_out << std::setfill('0') << std::setw(2) << next_month << "." << next_year;
+
+    auto build_one_document = [&](const std::string &period) {
+        std::ostringstream doc;
+
+        doc << R"html(<div class="paper">
+<div class="topline"><div>Адрес: )html";
+        doc << html_escape(m.address);
+        doc << R"html(</div><div class="date-line">Платежный документ за )html";
+        doc << period;
+        doc << R"html(</div></div>
+
+<table class="meta">
+<tr>
+    <th>№ лицевого счета</th>
+    <th>Период</th>
+    <th>К оплате</th>
+</tr>
+<tr>
+    <td>)html";
+        doc << html_escape(m.account);
+        doc << R"html(</td>
+    <td>)html";
+        doc << period;
+        doc << R"html(</td>
+    <td>)html";
+        doc << format_money(m.area * m.contribution);
+        doc << R"html(</td>
+</tr>
+</table>
+
+<div class="doc-info"><b>Плательщик:</b> )html";
+        doc << html_escape(m.fio);
+        doc << R"html(</div>
+<div class="doc-info"><b>Адрес объекта собственности:</b> )html";
+        doc << html_escape(m.address);
+        doc << R"html(</div>
+<div class="doc-info"><b>Получатель платежа:</b> ТСЖ "Школьная, 17"</div>
+<div class="doc-info"><b>Реквизиты:</b> ИНН 3902800956, КПП 390201001, р\с 40705810755050000170, к\с 30101810500000000878, БИК 042748878</div>
+<div class="doc-info"><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
+
+<table class="calc">
+<tr>
+    <th>Название услуги</th>
+    <th>Ед. изм.</th>
+    <th>Площадь</th>
+    <th>Размер взноса</th>
+    <th>Сумма</th>
+    <th>Перерасчет</th>
+    <th>Итого</th>
+</tr>
+<tr>
+    <td>Взнос на капитальный ремонт общего имущества в многоквартирном доме</td>
+    <td class="center">кв.м</td>
+    <td class="right">)html";
+        doc << std::fixed << std::setprecision(1) << m.area;
+        doc << R"html(</td>
+    <td class="right">)html";
+        doc << std::fixed << std::setprecision(1) << m.contribution;
+        doc << R"html(</td>
+    <td class="right">)html";
+        doc << format_money(m.area * m.contribution);
+        doc << R"html(</td>
+    <td class="right">-</td>
+    <td class="right">)html";
+        doc << format_money(m.area * m.contribution);
+        doc << R"html(</td>
+</tr>
+</table>
+
+<div>Задолженность: -</div>
+<div><b>Итого к оплате:</b> )html";
+        doc << format_money(m.area * m.contribution);
+        doc << R"html(</div>
+
+<div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
+</div>)html";
+
+        return doc.str();
+    };
 
     out << R"html(<!doctype html>
 <html lang="ru">
@@ -448,14 +539,12 @@ static std::string build_member_document(const Member &m) {
         margin: 6px 0 0;
         height: 0;
     }
-
     .doc-info {
         font-size: 10px;
         line-height: 1.05;
         font-family: Cambria, serif;
         margin: 0;
     }
-
     @media print {
         body { background: #fff; padding: 0; }
         .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; }
@@ -464,78 +553,12 @@ static std::string build_member_document(const Member &m) {
 </style>
 </head>
 <body>
-<div class="paper">
-<div class="topline"><div>Адрес: )html";
-    out << html_escape(m.address);
-    out << R"html(</div><div class="date-line">Платежный документ за )html";
-    out << date_out.str();
-    out << R"html(</div></div>
+<div class="paper">)html";
 
-<table class="meta">
-<tr>
-    <th>№ лицевого счета</th>
-    <th>Период</th>
-    <th>К оплате</th>
-</tr>
-<tr>
-    <td>)html";
-    out << html_escape(m.account);
-    out << R"html(</td>
-    <td>)html";
-    out << date_out.str();
-    out << R"html(</td>
-    <td>)html";
-    out << format_money(m.area * m.contribution);
-    out << R"html(</td>
-</tr>
-</table>
+    out << build_one_document(date_out.str());
+    out << build_one_document(next_date_out.str());
 
-<div class="doc-info"><b>Плательщик:</b> )html";
-    out << html_escape(m.fio);
-    out << R"html(</div>
-<div class="doc-info"><b>Адрес объекта собственности:</b> )html";
-    out << html_escape(m.address);
-    out << R"html(</div>
-<div class="doc-info"><b>Получатель платежа:</b> ТСЖ "Школьная, 17"</div>
-<div class="doc-info"><b>Реквизиты:</b> ИНН 3902800956, КПП 390201001, р\с 40705810755050000170, к\с 30101810500000000878, БИК 042748878</div>
-<div class="doc-info"><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
-
-<table class="calc">
-<tr>
-    <th>Название услуги</th>
-    <th>Ед. изм.</th>
-    <th>Площадь</th>
-    <th>Размер взноса</th>
-    <th>Сумма</th>
-    <th>Перерасчет</th>
-    <th>Итого</th>
-</tr>
-<tr>
-    <td>Взнос на капитальный ремонт общего имущества в многоквартирном доме</td>
-    <td class="center">кв.м</td>
-    <td class="right">)html";
-    out << std::fixed << std::setprecision(1) << m.area;
-    out << R"html(</td>
-    <td class="right">)html";
-    out << std::fixed << std::setprecision(1) << m.contribution;
-    out << R"html(</td>
-    <td class="right">)html";
-    out << format_money(m.area * m.contribution);
-    out << R"html(</td>
-    <td class="right">-</td>
-    <td class="right">)html";
-    out << format_money(m.area * m.contribution);
-    out << R"html(</td>
-</tr>
-</table>
-
-<div>Задолженность: -</div>
-<div><b>Итого к оплате:</b> )html";
-    out << format_money(m.area * m.contribution);
-    out << R"html(</div>
-
-<div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
-
+    out << R"html(
 <div class="actions">
     <a class="btn" href="/members">Назад</a>
     <a class="btn print" href="javascript:window.print()">Печать</a>
@@ -543,6 +566,7 @@ static std::string build_member_document(const Member &m) {
 </div>
 </body>
 </html>)html";
+
     return out.str();
 }
 
