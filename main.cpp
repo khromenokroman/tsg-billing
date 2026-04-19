@@ -380,7 +380,16 @@ static std::string build_member_document(const Member &m) {
         color: var(--accent);
         font-family: Cambria, serif;
     }
-    .meta, .calc {
+    .meta {
+        width: 72%;
+        max-width: 720px;
+        margin: 10px 0 10px 0;
+        margin-right: auto;
+        margin-left: 0;
+        border-collapse: collapse;
+        font-family: Cambria, serif;
+    }
+    .calc {
         width: 100%;
         border-collapse: collapse;
         margin: 10px 0;
@@ -390,12 +399,13 @@ static std::string build_member_document(const Member &m) {
         border: 1px solid var(--line);
         padding: 6px 8px;
         font-size: 14px;
-        vertical-align: top;
+        vertical-align: middle;
         font-family: Cambria, serif;
+        text-align: center;
     }
     .meta th, .calc th {
         background: #f2f6fb;
-        text-align: left;
+        text-align: center;
     }
     .right { text-align: right; }
     .center { text-align: center; }
@@ -420,8 +430,8 @@ static std::string build_member_document(const Member &m) {
     }
     .print { background: linear-gradient(135deg, #198754, #146c43); }
     .note {
-        font-size: 13px;
-        line-height: 1.08;
+        font-size: 11px;
+        line-height: 1.05;
         font-family: Cambria, serif;
         margin: 0;
     }
@@ -429,7 +439,8 @@ static std::string build_member_document(const Member &m) {
         text-align: center;
         font-weight: 700;
         margin: 0;
-        line-height: 1.08;
+        line-height: 1.05;
+        font-size: 11px;
     }
     .separator {
         border: 0;
@@ -437,6 +448,14 @@ static std::string build_member_document(const Member &m) {
         margin: 6px 0 0;
         height: 0;
     }
+
+    .doc-info {
+        font-size: 10px;
+        line-height: 1.05;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+
     @media print {
         body { background: #fff; padding: 0; }
         .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; }
@@ -463,21 +482,21 @@ static std::string build_member_document(const Member &m) {
     out << html_escape(m.account);
     out << R"html(</td>
     <td>4.2026</td>
-    <td class="right">)html";
+    <td>)html";
     out << format_money(m.area * m.contribution);
     out << R"html(</td>
 </tr>
 </table>
 
-<div><b>Плательщик:</b> )html";
+<div class="doc-info"><b>Плательщик:</b> )html";
     out << html_escape(m.fio);
     out << R"html(</div>
-<div><b>Адрес объекта собственности:</b> )html";
+<div class="doc-info"><b>Адрес объекта собственности:</b> )html";
     out << html_escape(m.address);
     out << R"html(</div>
-<div><b>Получатель платежа:</b> ТСЖ "Школьная, 17"</div>
-<div><b>Реквизиты:</b> ИНН 3902800956, КПП 390201001, р\с 40705810755050000170, к\с 30101810500000000878, БИК 042748878</div>
-<div><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
+<div class="doc-info"><b>Получатель платежа:</b> ТСЖ "Школьная, 17"</div>
+<div class="doc-info"><b>Реквизиты:</b> ИНН 3902800956, КПП 390201001, р\с 40705810755050000170, к\с 30101810500000000878, БИК 042748878</div>
+<div class="doc-info"><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
 
 <table class="calc">
 <tr>
@@ -491,7 +510,7 @@ static std::string build_member_document(const Member &m) {
 </tr>
 <tr>
     <td>Взнос на капитальный ремонт общего имущества в многоквартирном доме</td>
-    <td class="center"></td>
+    <td class="center">кв.м</td>
     <td class="right">)html";
     out << std::fixed << std::setprecision(1) << m.area;
     out << R"html(</td>
@@ -501,21 +520,19 @@ static std::string build_member_document(const Member &m) {
     <td class="right">)html";
     out << format_money(m.area * m.contribution);
     out << R"html(</td>
-    <td class="right"></td>
+    <td class="right">-</td>
     <td class="right">)html";
     out << format_money(m.area * m.contribution);
     out << R"html(</td>
 </tr>
 </table>
 
-<div><b>Задолженность:</b> -</div>
+<div>Задолженность: -</div>
 <div><b>Итого к оплате:</b> )html";
     out << format_money(m.area * m.contribution);
     out << R"html(</div>
 
-<div class="bottom-note">
 <div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
-</div>
 
 <div class="actions">
     <a class="btn" href="/members">Назад</a>
