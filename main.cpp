@@ -78,32 +78,11 @@ static std::string format_money(double x) {
     return s;
 }
 
-static json member_to_json(const Member &m) {
-    return json{
-        {"id", m.id},
-        {"fio", m.fio},
-        {"area", m.area},
-        {"address", m.address},
-        {"account", m.account},
-        {"contribution", m.contribution}
-    };
-}
-
-static Member member_from_json(const json &j) {
-    Member m;
-    m.id = j.value("id", 0);
-    m.fio = j.value("fio", "");
-    m.area = j.value("area", 0.0);
-    m.address = j.value("address", "");
-    m.account = j.value("account", "");
-    m.contribution = j.value("contribution", 0.0);
-    return m;
-}
 
 static void save_data() {
-    json j = json::array();
+    ::nlohmann::json j = ::nlohmann::json::array();
     for (const auto &m : g_members) {
-        j.push_back(member_to_json(m));
+        j.push_back(::nlohmann::json(m));
     }
 
     std::ofstream file(kDataFile);
@@ -116,12 +95,12 @@ static void load_data() {
     std::ifstream file(kDataFile);
     if (!file) return;
 
-    json j;
+    ::nlohmann::json j;
     file >> j;
 
     g_members.clear();
     for (const auto &item : j) {
-        g_members.push_back(member_from_json(item));
+        g_members.push_back(::nlohmann::json(item));
     }
 
     int max_id = 0;
