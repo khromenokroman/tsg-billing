@@ -481,7 +481,9 @@ static std::string build_member_document(const Member &m) {
     <td>)html";
     out << html_escape(m.account);
     out << R"html(</td>
-    <td>4.2026</td>
+    <td>)html";
+    out << date_out.str();
+    out << R"html(</td>
     <td>)html";
     out << format_money(m.area * m.contribution);
     out << R"html(</td>
