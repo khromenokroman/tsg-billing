@@ -317,8 +317,16 @@ static std::string build_index_page() {
 }
 
 static std::string build_member_document(const Member &m) {
-    double total = m.area * m.contribution;
     std::ostringstream out;
+
+    auto now = std::chrono::system_clock::now();
+    std::time_t tt = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    tm = *std::localtime(&tt);
+
+    std::ostringstream date_out;
+    date_out << std::put_time(&tm, "%m.%Y");
+
     out << R"html(<!doctype html>
 <html lang="ru">
 <head>
@@ -338,70 +346,111 @@ static std::string build_member_document(const Member &m) {
     body {
         margin: 0;
         background: linear-gradient(135deg, var(--bg1), var(--bg2));
-        font-family: "Times New Roman", serif;
-        padding: 24px;
+        font-family: Cambria, serif;
+        padding: 12px;
         color: var(--text);
     }
     .paper {
         max-width: 980px;
         margin: 0 auto;
         background: var(--paper);
-        border-radius: 18px;
-        padding: 28px 34px;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+        border-radius: 14px;
+        padding: 16px 20px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
     }
-    .topline, .bottom-note { white-space: pre-wrap; font-size: 18px; line-height: 1.35; }
+    .topline, .bottom-note {
+        white-space: pre-wrap;
+        font-size: 15px;
+        line-height: 1.15;
+        font-family: Cambria, serif;
+    }
+    .topline {
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .topline .date-line {
+        margin-top: 0;
+        font-weight: 700;
+    }
     h1 {
         text-align: center;
-        margin: 16px 0 20px;
-        font-size: 30px;
+        margin: 10px 0 12px;
+        font-size: 24px;
         color: var(--accent);
+        font-family: Cambria, serif;
     }
     .meta, .calc {
         width: 100%;
         border-collapse: collapse;
-        margin: 18px 0;
+        margin: 10px 0;
+        font-family: Cambria, serif;
     }
     .meta th, .meta td, .calc th, .calc td {
         border: 1px solid var(--line);
-        padding: 10px 12px;
-        font-size: 18px;
+        padding: 6px 8px;
+        font-size: 14px;
         vertical-align: top;
+        font-family: Cambria, serif;
     }
-    .meta th, .calc th { background: #f2f6fb; text-align: left; }
+    .meta th, .calc th {
+        background: #f2f6fb;
+        text-align: left;
+    }
     .right { text-align: right; }
     .center { text-align: center; }
     .actions {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
-        margin-top: 18px;
+        margin-top: 10px;
     }
     a.btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 46px;
-        padding: 0 18px;
-        border-radius: 14px;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
         text-decoration: none;
         color: #fff;
         background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+        font-family: Cambria, serif;
+        font-size: 14px;
     }
     .print { background: linear-gradient(135deg, #198754, #146c43); }
+    .note {
+        font-size: 13px;
+        line-height: 1.08;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+    .note-strong {
+        text-align: center;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.08;
+    }
+    .separator {
+        border: 0;
+        border-top: 1px dashed #666;
+        margin: 6px 0 0;
+        height: 0;
+    }
     @media print {
         body { background: #fff; padding: 0; }
-        .paper { box-shadow: none; border-radius: 0; max-width: none; }
+        .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; }
         .actions { display: none; }
     }
 </style>
 </head>
 <body>
 <div class="paper">
-<div class="topline">Адрес: )html";
+<div class="topline"><div>Адрес: )html";
     out << html_escape(m.address);
-    out << R"html(
-Платежный документ за 4.2026</div>
+    out << R"html(</div><div class="date-line">Платежный документ за )html";
+    out << date_out.str();
+    out << R"html(</div></div>
 
 <table class="meta">
 <tr>
@@ -464,16 +513,8 @@ static std::string build_member_document(const Member &m) {
     out << format_money(m.area * m.contribution);
     out << R"html(</div>
 
-<br>
 <div class="bottom-note">
-УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!
-
-В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов.
-Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00
-
-ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4
-КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)
-РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК
+<div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
 </div>
 
 <div class="actions">
