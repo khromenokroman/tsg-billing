@@ -355,14 +355,16 @@ static std::string build_index_page() {
         border-collapse: collapse;
         table-layout: fixed;
         background: rgba(255,255,255,0.05);
+        font-family: Cambria, serif;
     }
     th, td {
         padding: 12px 10px;
         border-bottom: 1px solid rgba(255,255,255,0.08);
-        font-size: 15px;
+        font-size: 16px;
         vertical-align: top;
         overflow-wrap: anywhere;
         word-break: break-word;
+        font-family: Cambria, serif;
     }
     th {
         background: rgba(255,255,255,0.12);
@@ -371,7 +373,7 @@ static std::string build_index_page() {
     .num-head,
     .num-cell { text-align: center; }
     .text-head,
-    .text-cell { text-align: left; }
+    .text-cell { text-align: center; }
     tr:hover { background: rgba(255,255,255,0.08); }
 
     .actions {
@@ -394,6 +396,7 @@ static std::string build_index_page() {
         justify-content: center;
         white-space: nowrap;
         flex: 0 0 auto;
+        font-family: Cambria, serif;
     }
     .doc { background: linear-gradient(135deg, #8ecae6, #219ebc); }
     .edit { background: linear-gradient(135deg, #ffd166, #f4a261); color: #1f2a44; }
@@ -487,7 +490,7 @@ static std::string build_index_page() {
                 <th class="col-account num-head">Лицевой счёт</th>
                 <th class="col-contribution num-head">Взнос</th>
                 <th class="col-recalc num-head">Перерасчёт</th>
-                <th class="col-debt num-head">Задолженность</th>
+                <th class="col-debt num-head">Долг</th>
                 <th class="col-actions num-head">Действия</th>
             </tr>
             </thead>
