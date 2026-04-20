@@ -9,7 +9,10 @@ find_package(fmt REQUIRED)
 
 configure_file(Version.in Version @ONLY)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME}
+        src/main.cpp
+        src/tsg-billing.cpp
+)
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt cpp-httplib)
 
 install(TARGETS ${PROJECT_NAME}
