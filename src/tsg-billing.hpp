@@ -16,11 +16,13 @@ struct Member {
 };
 
 struct Config {
+    std::string receiver_name{}; // 32
+    std::string receiver_details{}; // 32
     std::string path_db{}; // 32
     int port{}; // 4
     int log_level{}; // 4
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Config, path_db, port, log_level)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Config, path_db, port, log_level, receiver_name, receiver_details)
 };
 using members = std::vector<Member>;
 
