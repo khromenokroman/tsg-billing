@@ -288,27 +288,32 @@ static std::string build_index_page() {
         --shadow: 0 12px 30px rgba(0,0,0,0.28);
     }
     * { box-sizing: border-box; }
-    body {
+    html, body {
+        width: 100%;
         margin: 0;
-        min-height: 100vh;
+        min-height: 100%;
         font-family: Cambria, serif;
         color: var(--text);
+        overflow-x: hidden;
+    }
+    body {
+        min-height: 100vh;
         background:
             radial-gradient(circle at top left, rgba(255,209,102,0.20), transparent 28%),
             radial-gradient(circle at bottom right, rgba(6,214,160,0.18), transparent 30%),
             linear-gradient(135deg, var(--bg1), var(--bg2));
-        padding: 24px;
+        padding: 16px;
     }
     .wrapper {
         width: 100%;
-        max-width: 1280px;
+        max-width: 100%;
         margin: 0 auto;
         background: rgba(255,255,255,0.06);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 28px;
         box-shadow: var(--shadow);
-        padding: 34px;
+        padding: 24px;
     }
     .header {
         display: flex;
@@ -316,9 +321,9 @@ static std::string build_index_page() {
         align-items: flex-end;
         gap: 20px;
         flex-wrap: wrap;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
     }
-    h1 { margin: 0; font-size: 40px; }
+    h1 { margin: 0; font-size: 36px; }
     .subtitle { margin: 8px 0 0; font-size: 18px; opacity: 0.88; }
 
     .add-btn {
@@ -338,54 +343,66 @@ static std::string build_index_page() {
         color: #fff;
         box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     }
-    .add-btn:hover { filter: brightness(1.05); }
-    .add-btn:active { transform: translateY(1px); }
 
     .table-wrap {
-        overflow-x: auto;
+        width: 100%;
+        overflow: hidden;
         border-radius: 22px;
         border: 1px solid rgba(255,255,255,0.10);
     }
     table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 1000px;
+        table-layout: fixed;
         background: rgba(255,255,255,0.05);
     }
     th, td {
-        padding: 14px 16px;
+        padding: 12px 10px;
         border-bottom: 1px solid rgba(255,255,255,0.08);
         text-align: left;
-        font-size: 17px;
+        font-size: 15px;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
     th { background: rgba(255,255,255,0.12); }
     tr:hover { background: rgba(255,255,255,0.08); }
+
     .actions {
         display: flex;
-        gap: 10px;
+        gap: 6px;
         flex-wrap: nowrap;
         align-items: center;
+        white-space: nowrap;
     }
     .small-btn {
-        min-height: 40px;
-        padding: 0 14px;
-        border-radius: 14px;
-        font-size: 15px;
+        min-height: 36px;
+        padding: 0 10px;
+        border-radius: 12px;
+        font-size: 13px;
         color: #fff;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
+        flex: 0 0 auto;
     }
     .doc { background: linear-gradient(135deg, #8ecae6, #219ebc); }
     .edit { background: linear-gradient(135deg, #ffd166, #f4a261); color: #1f2a44; }
     .del { background: linear-gradient(135deg, var(--danger), #c9184a); }
     .empty { padding: 24px; text-align: center; opacity: 0.9; }
+
     .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: 1fr;
         gap: 14px;
         margin-bottom: 18px;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 14px;
     }
     .field { display: grid; gap: 8px; }
     label { font-size: 16px; font-weight: 700; }
@@ -400,6 +417,24 @@ static std::string build_index_page() {
         font-family: Cambria, serif;
         font-size: 16px;
     }
+
+    .col-id { width: 70px; }
+    .col-name { width: 18%; }
+    .col-area { width: 80px; }
+    .col-address { width: 26%; }
+    .col-account { width: 120px; }
+    .col-contribution { width: 80px; }
+    .col-recalc { width: 90px; }
+    .col-debt { width: 90px; }
+    .col-actions { width: 260px; }
+
+    .number { text-align: center; }
+    .actions-cell { text-align: center; }
+
+    @media (max-width: 1100px) {
+        th, td { font-size: 14px; padding: 10px 8px; }
+        .col-actions { width: 240px; }
+    }
 </style>
 </head>
 <body>
@@ -413,47 +448,62 @@ static std::string build_index_page() {
 
     <form action="/add" method="post">
         <div class="form-grid">
-            <div class="field"><label>ФИО</label><input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ"></div>
+            <div class="field">
+                <label>ФИО</label>
+                <input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ">
+            </div>
+            <div class="field">
+                <label>Адрес</label>
+                <input name="address" required placeholder="238050, Гусевский р-н, г. Гусев, ул.Школьная, д.17, кв.3">
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="field"><label>Площадь квартиры</label><input name="area" required placeholder="78.6"></div>
-            <div class="field"><label>Адрес</label><input name="address" required placeholder="238050. ..."></div>
             <div class="field"><label>Лицевой счёт</label><input name="account" required placeholder="269088081"></div>
             <div class="field"><label>Размер взноса</label><input name="contribution" required placeholder="8.9"></div>
             <div class="field"><label>Перерасчёт</label><input name="recalculation" required placeholder="0"></div>
             <div class="field"><label>Задолженность</label><input name="debt" required placeholder="0"></div>
         </div>
+
+        <div style="height: 16px;"></div>
         <button class="add-btn" type="submit">Создать участника</button>
     </form>
 
-    <div style="height: 24px;"></div>
+    <div style="height: 18px;"></div>
 
     <div class="table-wrap">
         <table>
             <thead>
             <tr>
-                <th>ID</th>
-                <th>ФИО</th>
-                <th>Площадь</th>
-                <th>Адрес</th>
-                <th>Лицевой счёт</th>
-                <th>Взнос</th>
-                <th>Действия</th>
+                <th class="col-id number">Номер</th>
+                <th class="col-name">ФИО</th>
+                <th class="col-area number">Площадь</th>
+                <th class="col-address">Адрес</th>
+                <th class="col-account number">Лицевой счёт</th>
+                <th class="col-contribution number">Взнос</th>
+                <th class="col-recalc number">Перерасчёт</th>
+                <th class="col-debt number">Задолженность</th>
+                <th class="col-actions actions-cell">Действия</th>
             </tr>
             </thead>
             <tbody>
 )html";
 
     if (g_members.empty()) {
-        out << R"html(<tr><td class="empty" colspan="7">Список участников пока пуст.</td></tr>)html";
+        out << R"html(<tr><td class="empty" colspan="9">Список участников пока пуст.</td></tr>)html";
     } else {
         for (const auto &m : g_members) {
             out << "<tr>";
-            out << "<td>" << m.id << "</td>";
+            out << "<td class=\"number\">" << m.id << "</td>";
             out << "<td>" << html_escape(m.fio) << "</td>";
-            out << "<td>" << m.area << "</td>";
+            out << "<td class=\"number\">" << m.area << "</td>";
             out << "<td>" << html_escape(m.address) << "</td>";
-            out << "<td>" << html_escape(m.account) << "</td>";
-            out << "<td>" << m.contribution << "</td>";
-            out << "<td><div class=\"actions\">";
+            out << "<td class=\"number\">" << html_escape(m.account) << "</td>";
+            out << "<td class=\"number\">" << m.contribution << "</td>";
+            out << "<td class=\"number\">" << format_money(m.recalculation) << "</td>";
+            out << "<td class=\"number\">" << format_money(m.debt) << "</td>";
+            out << "<td class=\"actions-cell\"><div class=\"actions\">";
             out << "<a class=\"small-btn doc\" href=\"/document?id=" << m.id << "\">Квитанция</a>";
             out << "<a class=\"small-btn edit\" href=\"/edit?id=" << m.id << "\">Редактировать</a>";
             out << "<a class=\"small-btn del\" href=\"/delete?id=" << m.id << "\">Удалить</a>";
