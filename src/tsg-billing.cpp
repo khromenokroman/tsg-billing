@@ -22,11 +22,10 @@ TSGBilling::TSGBilling() {
     syslog(LOG_INFO, "Получены настройки:\n%s", cfg.dump(1).c_str());
 }
 void TSGBilling::run() {
-    load_users();
-
     m_server.Get("/", [this](httplib::Request const &req, httplib::Response &res) {
         syslog(LOG_INFO, "Поступил запрос('/') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
                req.local_addr.c_str(), req.local_port);
+        load_users();
         res.set_content(build_index_page(), "text/html; charset=utf-8");
     });
 
@@ -36,7 +35,14 @@ void TSGBilling::run() {
 
     m_server.Post("/add", [this](const httplib::Request &req, httplib::Response &res) {
         Member m;
-        m.id = m_members.back().id++;
+        auto const it =
+                std::ranges::max_element(m_members, [](Member const &a, Member const &b) { return a.id < b.id; });
+        if (it != m_members.end()) {
+            m.id = it->id + 1;
+        } else {
+            m.id = 1;
+        }
+
         m.fio = req.get_param_value("fio");
         m.area = to_double(req.get_param_value("area"));
         m.address = req.get_param_value("address");
