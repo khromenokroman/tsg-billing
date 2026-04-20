@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -8,7 +10,6 @@
 
 #include <httplib.h>
 #include <nlohmann/json.hpp>
-
 
 struct Member {
     int id{};
@@ -42,24 +43,6 @@ static std::string html_escape(const std::string &s) {
     return out;
 }
 
-static std::string url_decode(std::string s) {
-    std::string out;
-    out.reserve(s.size());
-    for (size_t i = 0; i < s.size(); ++i) {
-        if (s[i] == '+') {
-            out += ' ';
-        } else if (s[i] == '%' && i + 2 < s.size()) {
-            std::string hex = s.substr(i + 1, 2);
-            char ch = static_cast<char>(std::strtol(hex.c_str(), nullptr, 16));
-            out += ch;
-            i += 2;
-        } else {
-            out += s[i];
-        }
-    }
-    return out;
-}
-
 static double to_double(const std::string &s) {
     std::string t = s;
     for (char &c : t) {
@@ -77,7 +60,6 @@ static std::string format_money(double x) {
     }
     return s;
 }
-
 
 static void save_data() {
     ::nlohmann::json j = ::nlohmann::json::array();
@@ -117,6 +99,138 @@ static Member* find_member(int id) {
     return nullptr;
 }
 
+static std::string build_edit_page(const Member &m) {
+    std::ostringstream out;
+    out << R"html(<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Редактирование участника</title>
+<style>
+    :root {
+        --bg1: #1f2a44;
+        --bg2: #243b55;
+        --text: #f5f5f5;
+        --accent2: #06d6a0;
+        --shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Cambria, serif;
+        color: var(--text);
+        background:
+            radial-gradient(circle at top left, rgba(255,209,102,0.20), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(6,214,160,0.18), transparent 30%),
+            linear-gradient(135deg, var(--bg1), var(--bg2));
+        padding: 24px;
+    }
+    .wrapper {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(255,255,255,0.06);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        padding: 34px;
+    }
+    h1 {
+        margin: 0 0 20px;
+        font-size: 36px;
+        text-align: center;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+    .field { display: grid; gap: 8px; }
+    label { font-size: 16px; font-weight: 700; }
+    input {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.10);
+        color: #fff;
+        outline: none;
+        font-family: Cambria, serif;
+        font-size: 16px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 28px;
+        border-radius: 18px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: Cambria, serif;
+        font-size: 18px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent2), #118ab2);
+        color: #fff;
+    }
+    .back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 28px;
+        border-radius: 18px;
+        text-decoration: none;
+        font-family: Cambria, serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+    <h1>Редактирование участника</h1>
+    <form action="/update" method="post">
+        <input type="hidden" name="id" value=")html";
+    out << m.id;
+    out << R"html(">
+        <div class="form-grid">
+            <div class="field"><label>ФИО</label><input name="fio" required value=")html";
+    out << html_escape(m.fio);
+    out << R"html("></div>
+            <div class="field"><label>Площадь квартиры</label><input name="area" required value=")html";
+    out << m.area;
+    out << R"html("></div>
+            <div class="field"><label>Адрес</label><input name="address" required value=")html";
+    out << html_escape(m.address);
+    out << R"html("></div>
+            <div class="field"><label>Лицевой счёт</label><input name="account" required value=")html";
+    out << html_escape(m.account);
+    out << R"html("></div>
+            <div class="field"><label>Размер взноса</label><input name="contribution" required value=")html";
+    out << m.contribution;
+    out << R"html("></div>
+        </div>
+        <div class="actions">
+            <button class="btn" type="submit">Сохранить</button>
+            <a class="back" href="/members">Отмена</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>)html";
+    return out.str();
+}
+
 static std::string build_index_page() {
     std::ostringstream out;
     out << R"html(<!doctype html>
@@ -129,7 +243,6 @@ static std::string build_index_page() {
     :root {
         --bg1: #1f2a44;
         --bg2: #243b55;
-        --card: rgba(255,255,255,0.08);
         --text: #f5f5f5;
         --accent: #ffd166;
         --accent2: #06d6a0;
@@ -187,12 +300,8 @@ static std::string build_index_page() {
         color: #fff;
         box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     }
-    .add-btn:hover {
-        filter: brightness(1.05);
-    }
-    .add-btn:active {
-        transform: translateY(1px);
-    }
+    .add-btn:hover { filter: brightness(1.05); }
+    .add-btn:active { transform: translateY(1px); }
 
     .table-wrap {
         overflow-x: auto;
@@ -231,6 +340,7 @@ static std::string build_index_page() {
         justify-content: center;
     }
     .doc { background: linear-gradient(135deg, #8ecae6, #219ebc); }
+    .edit { background: linear-gradient(135deg, #ffd166, #f4a261); color: #1f2a44; }
     .del { background: linear-gradient(135deg, var(--danger), #c9184a); }
     .empty { padding: 24px; text-align: center; opacity: 0.9; }
     .form-grid {
@@ -259,7 +369,7 @@ static std::string build_index_page() {
     <div class="header">
         <div>
             <h1>Участники ТСЖ</h1>
-            <p class="subtitle">Добавление, просмотр, удаление и генерация платёжного документа.</p>
+            <p class="subtitle">Добавление, просмотр, удаление, редактирование и генерация платёжного документа.</p>
         </div>
     </div>
 
@@ -305,6 +415,7 @@ static std::string build_index_page() {
             out << "<td>" << m.contribution << "</td>";
             out << "<td><div class=\"actions\">";
             out << "<a class=\"small-btn doc\" href=\"/document?id=" << m.id << "\">Квитанция</a>";
+            out << "<a class=\"small-btn edit\" href=\"/edit?id=" << m.id << "\">Редактировать</a>";
             out << "<a class=\"small-btn del\" href=\"/delete?id=" << m.id << "\">Удалить</a>";
             out << "</div></td>";
             out << "</tr>";
@@ -453,6 +564,7 @@ static std::string build_member_document(const Member &m) {
         border-radius: 14px;
         padding: 16px 20px;
         box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+        margin-bottom: 20px;
     }
     .topline, .bottom-note {
         white-space: pre-wrap;
@@ -468,13 +580,6 @@ static std::string build_member_document(const Member &m) {
     .topline .date-line {
         margin-top: 0;
         font-weight: 700;
-    }
-    h1 {
-        text-align: center;
-        margin: 10px 0 12px;
-        font-size: 24px;
-        color: var(--accent);
-        font-family: Cambria, serif;
     }
     .meta {
         width: 72%;
@@ -503,8 +608,31 @@ static std::string build_member_document(const Member &m) {
         background: #f2f6fb;
         text-align: center;
     }
-    .right { text-align: right; }
-    .center { text-align: center; }
+    .doc-info {
+        font-size: 10px;
+        line-height: 1.05;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+    .note {
+        font-size: 11px;
+        line-height: 1.05;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+    .note-strong {
+        text-align: center;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.05;
+        font-size: 11px;
+    }
+    .separator {
+        border: 0;
+        border-top: 1px dashed #666;
+        margin: 6px 0 0;
+        height: 0;
+    }
     .actions {
         display: flex;
         gap: 10px;
@@ -525,45 +653,21 @@ static std::string build_member_document(const Member &m) {
         font-size: 14px;
     }
     .print { background: linear-gradient(135deg, #198754, #146c43); }
-    .note {
-        font-size: 11px;
-        line-height: 1.05;
-        font-family: Cambria, serif;
-        margin: 0;
-    }
-    .note-strong {
-        text-align: center;
-        font-weight: 700;
-        margin: 0;
-        line-height: 1.05;
-        font-size: 11px;
-    }
-    .separator {
-        border: 0;
-        border-top: 1px dashed #666;
-        margin: 6px 0 0;
-        height: 0;
-    }
-    .doc-info {
-        font-size: 10px;
-        line-height: 1.05;
-        font-family: Cambria, serif;
-        margin: 0;
-    }
     @media print {
         body { background: #fff; padding: 0; }
-        .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; }
+        .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; margin-bottom: 0; }
         .actions { display: none; }
     }
 </style>
 </head>
 <body>
-<div class="paper">)html";
+)html";
 
     out << build_one_document(date_out.str());
     out << build_one_document(next_date_out.str());
 
     out << R"html(
+<div class="paper">
 <div class="actions">
     <a class="btn" href="/members">Назад</a>
     <a class="btn print" href="javascript:window.print()">Печать</a>
@@ -599,7 +703,49 @@ int main() {
 
         g_members.push_back(m);
         save_data();
+        res.set_redirect("/members");
+    });
 
+    server.Get("/edit", [](const httplib::Request &req, httplib::Response &res) {
+        if (!req.has_param("id")) {
+            res.status = 404;
+            res.set_content("Участник не найден", "text/plain; charset=utf-8");
+            return;
+        }
+
+        int id = std::stoi(req.get_param_value("id"));
+        Member *m = find_member(id);
+        if (!m) {
+            res.status = 404;
+            res.set_content("Участник не найден", "text/plain; charset=utf-8");
+            return;
+        }
+
+        res.set_content(build_edit_page(*m), "text/html; charset=utf-8");
+    });
+
+    server.Post("/update", [](const httplib::Request &req, httplib::Response &res) {
+        if (!req.has_param("id")) {
+            res.status = 404;
+            res.set_content("Участник не найден", "text/plain; charset=utf-8");
+            return;
+        }
+
+        int id = std::stoi(req.get_param_value("id"));
+        Member *m = find_member(id);
+        if (!m) {
+            res.status = 404;
+            res.set_content("Участник не найден", "text/plain; charset=utf-8");
+            return;
+        }
+
+        m->fio = req.get_param_value("fio");
+        m->area = to_double(req.get_param_value("area"));
+        m->address = req.get_param_value("address");
+        m->account = req.get_param_value("account");
+        m->contribution = to_double(req.get_param_value("contribution"));
+
+        save_data();
         res.set_redirect("/members");
     });
 
