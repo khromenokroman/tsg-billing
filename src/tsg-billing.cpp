@@ -24,33 +24,31 @@ TSGBilling::TSGBilling() {
 void TSGBilling::run() {
     load_users();
 
-    httplib::Server server;
-
-    server.Get("/", [this](httplib::Request const &req, httplib::Response &res) {
+    m_server.Get("/", [this](httplib::Request const &req, httplib::Response &res) {
         syslog(LOG_INFO, "Поступил запрос('/') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
                req.local_addr.c_str(), req.local_port);
         res.set_content(build_index_page(), "text/html; charset=utf-8");
     });
 
-    // server.Get("/members", [this](const httplib::Request &, httplib::Response &res) {
+    // m_server.Get("/members", [this](const httplib::Request &, httplib::Response &res) {
     //     res.set_content(build_index_page(), "text/html; charset=utf-8");
     // });
 
-    // server.Post("/add", [this](const httplib::Request &req, httplib::Response &res) {
-    //     Member m;
-    //     m.id = g_next_id++;
-    //     m.fio = req.get_param_value("fio");
-    //     m.area = to_double(req.get_param_value("area"));
-    //     m.address = req.get_param_value("address");
-    //     m.account = req.get_param_value("account");
-    //     m.contribution = to_double(req.get_param_value("contribution"));
-    //     m.recalculation = to_double(req.get_param_value("recalculation"));
-    //     m.debt = to_double(req.get_param_value("debt"));
-    //
-    //     g_members.push_back(m);
-    //     save_data();
-    //     res.set_redirect("/members");
-    // });
+    m_server.Post("/add", [this](const httplib::Request &req, httplib::Response &res) {
+        Member m;
+        m.id = m_members.back().id++;
+        m.fio = req.get_param_value("fio");
+        m.area = to_double(req.get_param_value("area"));
+        m.address = req.get_param_value("address");
+        m.account = req.get_param_value("account");
+        m.contribution = to_double(req.get_param_value("contribution"));
+        m.recalculation = to_double(req.get_param_value("recalculation"));
+        m.debt = to_double(req.get_param_value("debt"));
+
+        m_members.push_back(m);
+        save_data();
+        res.set_redirect("/");
+    });
 
     // server.Get("/edit", [this](const httplib::Request &req, httplib::Response &res) {
     //     if (!req.has_param("id")) {
@@ -126,8 +124,8 @@ void TSGBilling::run() {
     //     res.set_content(build_member_document(*m), "text/html; charset=utf-8");
     // });
 
-    std::cout << "Сервер запущен: http://127.0.0.1:8080\n";
-    server.listen("0.0.0.0", 8080);
+    syslog(LOG_NOTICE, "Запущен сервер на http://127.0.0.1:%d", m_config.port);
+    m_server.listen("0.0.0.0", m_config.port);
 }
 void TSGBilling::load_users() {
     std::ifstream file(m_config.path_db);
@@ -142,6 +140,18 @@ void TSGBilling::load_users() {
     syslog(LOG_INFO, "Получены пользователи из БД:\n%s", j.dump(2).c_str());
 
     m_members = j.get<members>();
+}
+void TSGBilling::save_data() {
+    ::nlohmann::json j = ::nlohmann::json(m_members);
+
+    std::ofstream file(m_config.path_db);
+    if (!file.is_open()) {
+        auto err = errno;
+        syslog(LOG_ERR, "Не могу открыть БД(%s): %s", m_config.path_db.c_str(), strerror(err));
+        throw std::runtime_error(::fmt::format("Не могу открыть БД({}): {}", m_config.path_db.c_str(), strerror(err)));
+    }
+    file << j;
+    syslog(LOG_INFO, "Данные записаны в БД:\n%s", j.dump(2).c_str());
 }
 std::string TSGBilling::build_index_page() const {
     std::ostringstream out;
@@ -480,4 +490,16 @@ std::string TSGBilling::format_money(double x) const {
             c = ',';
     }
     return s;
+}
+double TSGBilling::to_double(std::string_view s) {
+    std::string t;
+    t.reserve(s.size());
+    for (auto const &symbol: s) {
+        if (symbol == ',') {
+            t.push_back('.');
+        } else {
+            t.push_back(symbol);
+        }
+    }
+    return std::stod(t);
 }

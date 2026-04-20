@@ -31,9 +31,12 @@ public:
 
 private:
     void load_users();
+    void save_data();
     [[nodiscard]] std::string build_index_page() const;
     [[nodiscard]] std::string html_escape(std::string_view s) const;
     [[nodiscard]] std::string format_money(double x) const;
+    [[nodiscard]] double to_double(std::string_view s);
+
 
     httplib::Server m_server; // 752
     Config m_config; // 40
