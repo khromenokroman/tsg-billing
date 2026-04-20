@@ -18,8 +18,10 @@ struct Member {
     std::string address;
     std::string account;
     double contribution{};
+    double recalculation{};
+    double debt{};
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Member, id, fio, area, address, account, contribution)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Member, id, fio, area, address, account, contribution, recalculation, debt)
 };
 
 static const std::string kDataFile = "members.json";
@@ -219,6 +221,12 @@ static std::string build_edit_page(const Member &m) {
             <div class="field"><label>Размер взноса</label><input name="contribution" required value=")html";
     out << m.contribution;
     out << R"html("></div>
+            <div class="field"><label>Перерасчёт</label><input name="recalculation" required value=")html";
+    out << m.recalculation;
+    out << R"html("></div>
+            <div class="field"><label>Задолженность</label><input name="debt" required value=")html";
+    out << m.debt;
+    out << R"html("></div>
         </div>
         <div class="actions">
             <button class="btn" type="submit">Сохранить</button>
@@ -380,6 +388,8 @@ static std::string build_index_page() {
             <div class="field"><label>Адрес</label><input name="address" required placeholder="238050. ..."></div>
             <div class="field"><label>Лицевой счёт</label><input name="account" required placeholder="269088081"></div>
             <div class="field"><label>Размер взноса</label><input name="contribution" required placeholder="8.9"></div>
+            <div class="field"><label>Перерасчёт</label><input name="recalculation" required placeholder="0"></div>
+            <div class="field"><label>Задолженность</label><input name="debt" required placeholder="0"></div>
         </div>
         <button class="add-btn" type="submit">Создать участника</button>
     </form>
@@ -516,16 +526,20 @@ static std::string build_member_document(const Member &m) {
     <td class="right">)html";
         doc << format_money(m.area * m.contribution);
         doc << R"html(</td>
-    <td class="right">-</td>
     <td class="right">)html";
-        doc << format_money(m.area * m.contribution);
+        doc << format_money(m.recalculation);
+        doc << R"html(</td>
+    <td class="right">)html";
+        doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
         doc << R"html(</td>
 </tr>
 </table>
 
-<div>Задолженность: -</div>
+<div>Задолженность: )html";
+        doc << format_money(m.debt);
+        doc << R"html(</div>
 <div><b>Итого к оплате:</b> )html";
-        doc << format_money(m.area * m.contribution);
+        doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
         doc << R"html(</div>
 
 <div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
@@ -675,7 +689,6 @@ static std::string build_member_document(const Member &m) {
 </div>
 </body>
 </html>)html";
-
     return out.str();
 }
 
@@ -700,6 +713,8 @@ int main() {
         m.address = req.get_param_value("address");
         m.account = req.get_param_value("account");
         m.contribution = to_double(req.get_param_value("contribution"));
+        m.recalculation = to_double(req.get_param_value("recalculation"));
+        m.debt = to_double(req.get_param_value("debt"));
 
         g_members.push_back(m);
         save_data();
@@ -744,6 +759,8 @@ int main() {
         m->address = req.get_param_value("address");
         m->account = req.get_param_value("account");
         m->contribution = to_double(req.get_param_value("contribution"));
+        m->recalculation = to_double(req.get_param_value("recalculation"));
+        m->debt = to_double(req.get_param_value("debt"));
 
         save_data();
         res.set_redirect("/members");
