@@ -1,21 +1,13 @@
-#include <algorithm>
-#include <chrono>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include <httplib.h>
-#include <nlohmann/json.hpp>
-
 #include "tsg-billing.hpp"
 
 
-
 int main() {
-    TSGBilling().run();
-    return 0;
+    try {
+        TSGBilling().run();
+    } catch (std::exception &ex) {
+        std::cerr << "Ошибка во время выполнения: " << ex.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
