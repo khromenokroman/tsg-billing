@@ -18,27 +18,11 @@
 //
 //
 //
-// static double to_double(const std::string &s) {
-//     std::string t = s;
-//     for (char &c : t) {
-//         if (c == ',') c = '.';
-//     }
-//     return std::stod(t);
-// }
+
 //
 //
 //
-// static void save_data() {
-//     ::nlohmann::json j = ::nlohmann::json::array();
-//     for (const auto &m : g_members) {
-//         j.push_back(::nlohmann::json(m));
-//     }
-//
-//     std::ofstream file(kDataFile);
-//     if (file) {
-//         file << std::setw(4) << j;
-//     }
-// }
+
 //
 //
 //
