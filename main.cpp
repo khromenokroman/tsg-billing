@@ -359,13 +359,19 @@ static std::string build_index_page() {
     th, td {
         padding: 12px 10px;
         border-bottom: 1px solid rgba(255,255,255,0.08);
-        text-align: left;
         font-size: 15px;
         vertical-align: top;
         overflow-wrap: anywhere;
         word-break: break-word;
     }
-    th { background: rgba(255,255,255,0.12); }
+    th {
+        background: rgba(255,255,255,0.12);
+        text-align: center;
+    }
+    .num-head,
+    .num-cell { text-align: center; }
+    .text-head,
+    .text-cell { text-align: left; }
     tr:hover { background: rgba(255,255,255,0.08); }
 
     .actions {
@@ -374,6 +380,7 @@ static std::string build_index_page() {
         flex-wrap: nowrap;
         align-items: center;
         white-space: nowrap;
+        justify-content: center;
     }
     .small-btn {
         min-height: 36px;
@@ -419,17 +426,14 @@ static std::string build_index_page() {
     }
 
     .col-id { width: 70px; }
-    .col-name { width: 18%; }
-    .col-area { width: 80px; }
+    .col-name { width: 20%; }
+    .col-area { width: 85px; }
     .col-address { width: 26%; }
     .col-account { width: 120px; }
-    .col-contribution { width: 80px; }
+    .col-contribution { width: 85px; }
     .col-recalc { width: 90px; }
     .col-debt { width: 90px; }
     .col-actions { width: 260px; }
-
-    .number { text-align: center; }
-    .actions-cell { text-align: center; }
 
     @media (max-width: 1100px) {
         th, td { font-size: 14px; padding: 10px 8px; }
@@ -476,15 +480,15 @@ static std::string build_index_page() {
         <table>
             <thead>
             <tr>
-                <th class="col-id number">Номер</th>
-                <th class="col-name">ФИО</th>
-                <th class="col-area number">Площадь</th>
-                <th class="col-address">Адрес</th>
-                <th class="col-account number">Лицевой счёт</th>
-                <th class="col-contribution number">Взнос</th>
-                <th class="col-recalc number">Перерасчёт</th>
-                <th class="col-debt number">Задолженность</th>
-                <th class="col-actions actions-cell">Действия</th>
+                <th class="col-id num-head">Номер</th>
+                <th class="col-name text-head">ФИО</th>
+                <th class="col-area num-head">Площадь</th>
+                <th class="col-address text-head">Адрес</th>
+                <th class="col-account num-head">Лицевой счёт</th>
+                <th class="col-contribution num-head">Взнос</th>
+                <th class="col-recalc num-head">Перерасчёт</th>
+                <th class="col-debt num-head">Задолженность</th>
+                <th class="col-actions num-head">Действия</th>
             </tr>
             </thead>
             <tbody>
@@ -495,15 +499,15 @@ static std::string build_index_page() {
     } else {
         for (const auto &m : g_members) {
             out << "<tr>";
-            out << "<td class=\"number\">" << m.id << "</td>";
-            out << "<td>" << html_escape(m.fio) << "</td>";
-            out << "<td class=\"number\">" << m.area << "</td>";
-            out << "<td>" << html_escape(m.address) << "</td>";
-            out << "<td class=\"number\">" << html_escape(m.account) << "</td>";
-            out << "<td class=\"number\">" << m.contribution << "</td>";
-            out << "<td class=\"number\">" << format_money(m.recalculation) << "</td>";
-            out << "<td class=\"number\">" << format_money(m.debt) << "</td>";
-            out << "<td class=\"actions-cell\"><div class=\"actions\">";
+            out << "<td class=\"num-cell\">" << m.id << "</td>";
+            out << "<td class=\"text-cell\">" << html_escape(m.fio) << "</td>";
+            out << "<td class=\"num-cell\">" << m.area << "</td>";
+            out << "<td class=\"text-cell\">" << html_escape(m.address) << "</td>";
+            out << "<td class=\"num-cell\">" << html_escape(m.account) << "</td>";
+            out << "<td class=\"num-cell\">" << m.contribution << "</td>";
+            out << "<td class=\"num-cell\">" << format_money(m.recalculation) << "</td>";
+            out << "<td class=\"num-cell\">" << format_money(m.debt) << "</td>";
+            out << "<td class=\"num-cell\"><div class=\"actions\">";
             out << "<a class=\"small-btn doc\" href=\"/document?id=" << m.id << "\">Квитанция</a>";
             out << "<a class=\"small-btn edit\" href=\"/edit?id=" << m.id << "\">Редактировать</a>";
             out << "<a class=\"small-btn del\" href=\"/delete?id=" << m.id << "\">Удалить</a>";
