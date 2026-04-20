@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+chmod 666 /var/tsg-billing/tsg-billing.json
+
+systemctl daemon-reload
+systemctl enable tsg-billing
+systemctl start tsg-billing
+
+exit 0
