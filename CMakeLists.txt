@@ -18,6 +18,12 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES systemd/tsg-billing.service
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system
 )
+install(FILES db/tsg-billing.json
+        DESTINATION /var/tsg-billing/
+)
+install(FILES configuration/cfg.json
+        DESTINATION /etc/tsg-billing/
+)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "khromenokroman")
