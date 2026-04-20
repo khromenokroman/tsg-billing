@@ -169,30 +169,31 @@ static std::string build_index_page() {
     }
     h1 { margin: 0; font-size: 40px; }
     .subtitle { margin: 8px 0 0; font-size: 18px; opacity: 0.88; }
-    .top-actions { display: flex; gap: 12px; flex-wrap: wrap; }
-    .nav-btn, button {
+
+    .add-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         min-height: 54px;
-        padding: 0 20px;
+        padding: 0 28px;
         border-radius: 18px;
+        border: none;
+        cursor: pointer;
         text-decoration: none;
         font-family: Cambria, serif;
         font-size: 18px;
         font-weight: 700;
-        cursor: pointer;
-        border: none;
-    }
-    .nav-btn {
-        color: var(--text);
-        background: rgba(255,255,255,0.10);
-        border: 1px solid rgba(255,255,255,0.14);
-    }
-    .add-btn {
         background: linear-gradient(135deg, var(--accent2), #118ab2);
         color: #fff;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     }
+    .add-btn:hover {
+        filter: brightness(1.05);
+    }
+    .add-btn:active {
+        transform: translateY(1px);
+    }
+
     .table-wrap {
         overflow-x: auto;
         border-radius: 22px;
@@ -212,7 +213,12 @@ static std::string build_index_page() {
     }
     th { background: rgba(255,255,255,0.12); }
     tr:hover { background: rgba(255,255,255,0.08); }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
     .small-btn {
         min-height: 40px;
         padding: 0 14px;
@@ -220,6 +226,9 @@ static std::string build_index_page() {
         font-size: 15px;
         color: #fff;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     .doc { background: linear-gradient(135deg, #8ecae6, #219ebc); }
     .del { background: linear-gradient(135deg, var(--danger), #c9184a); }
@@ -251,10 +260,6 @@ static std::string build_index_page() {
         <div>
             <h1>Участники ТСЖ</h1>
             <p class="subtitle">Добавление, просмотр, удаление и генерация платёжного документа.</p>
-        </div>
-        <div class="top-actions">
-            <a class="nav-btn" href="/">Главная</a>
-            <a class="nav-btn" href="/members">Обновить список</a>
         </div>
     </div>
 
@@ -299,7 +304,7 @@ static std::string build_index_page() {
             out << "<td>" << html_escape(m.account) << "</td>";
             out << "<td>" << m.contribution << "</td>";
             out << "<td><div class=\"actions\">";
-            out << "<a class=\"small-btn doc\" href=\"/document?id=" << m.id << "\">Документ</a>";
+            out << "<a class=\"small-btn doc\" href=\"/document?id=" << m.id << "\">Квитанция</a>";
             out << "<a class=\"small-btn del\" href=\"/delete?id=" << m.id << "\">Удалить</a>";
             out << "</div></td>";
             out << "</tr>";
