@@ -131,7 +131,7 @@ static std::string build_edit_page(const Member &m) {
     }
     .wrapper {
         width: 100%;
-        max-width: 900px;
+        max-width: 980px;
         margin: 0 auto;
         background: rgba(255,255,255,0.06);
         backdrop-filter: blur(10px);
@@ -150,6 +150,11 @@ static std::string build_edit_page(const Member &m) {
         grid-template-columns: 1fr;
         gap: 14px;
         margin-bottom: 18px;
+    }
+    .pair-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
     }
     .field { display: grid; gap: 8px; }
     label { font-size: 16px; font-weight: 700; }
@@ -206,28 +211,53 @@ static std::string build_edit_page(const Member &m) {
     out << m.id;
     out << R"html(">
         <div class="form-grid">
-            <div class="field"><label>ФИО</label><input name="fio" required value=")html";
+            <div class="field">
+                <label>ФИО</label>
+                <input name="fio" required value=")html";
     out << html_escape(m.fio);
-    out << R"html("></div>
-            <div class="field"><label>Площадь квартиры</label><input name="area" required value=")html";
-    out << m.area;
-    out << R"html("></div>
-            <div class="field"><label>Адрес</label><input name="address" required value=")html";
+    out << R"html(">
+            </div>
+            <div class="field">
+                <label>Адрес</label>
+                <input name="address" required value=")html";
     out << html_escape(m.address);
-    out << R"html("></div>
-            <div class="field"><label>Лицевой счёт</label><input name="account" required value=")html";
-    out << html_escape(m.account);
-    out << R"html("></div>
-            <div class="field"><label>Размер взноса</label><input name="contribution" required value=")html";
-    out << m.contribution;
-    out << R"html("></div>
-            <div class="field"><label>Перерасчёт</label><input name="recalculation" required value=")html";
-    out << m.recalculation;
-    out << R"html("></div>
-            <div class="field"><label>Задолженность</label><input name="debt" required value=")html";
-    out << m.debt;
-    out << R"html("></div>
+    out << R"html(">
+            </div>
         </div>
+
+        <div class="pair-grid">
+            <div class="field">
+                <label>Площадь квартиры</label>
+                <input name="area" required value=")html";
+    out << m.area;
+    out << R"html(">
+            </div>
+            <div class="field">
+                <label>Лицевой счёт</label>
+                <input name="account" required value=")html";
+    out << html_escape(m.account);
+    out << R"html(">
+            </div>
+            <div class="field">
+                <label>Размер взноса</label>
+                <input name="contribution" required value=")html";
+    out << m.contribution;
+    out << R"html(">
+            </div>
+            <div class="field">
+                <label>Перерасчёт</label>
+                <input name="recalculation" required value=")html";
+    out << m.recalculation;
+    out << R"html(">
+            </div>
+            <div class="field">
+                <label>Задолженность</label>
+                <input name="debt" required value=")html";
+    out << m.debt;
+    out << R"html(">
+            </div>
+        </div>
+
         <div class="actions">
             <button class="btn" type="submit">Сохранить</button>
             <a class="back" href="/members">Отмена</a>
