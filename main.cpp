@@ -286,6 +286,9 @@ static std::string build_index_page() {
         --accent2: #06d6a0;
         --danger: #ef476f;
         --shadow: 0 12px 30px rgba(0,0,0,0.28);
+        --card: rgba(255,255,255,0.08);
+        --card2: rgba(255,255,255,0.06);
+        --line: rgba(255,255,255,0.12);
     }
     * { box-sizing: border-box; }
     html, body {
@@ -308,9 +311,9 @@ static std::string build_index_page() {
         width: 100%;
         max-width: 100%;
         margin: 0 auto;
-        background: rgba(255,255,255,0.06);
+        background: rgba(255,255,255,0.05);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.12);
+        border: 1px solid var(--line);
         border-radius: 28px;
         box-shadow: var(--shadow);
         padding: 24px;
@@ -323,15 +326,75 @@ static std::string build_index_page() {
         flex-wrap: wrap;
         margin-bottom: 18px;
     }
-    h1 { margin: 0; font-size: 36px; }
-    .subtitle { margin: 8px 0 0; font-size: 18px; opacity: 0.88; }
+    h1 {
+        margin: 0;
+        font-size: 36px;
+    }
+    .subtitle {
+        margin: 8px 0 0;
+        font-size: 18px;
+        opacity: 0.88;
+    }
 
+    .create-card {
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .create-card-title {
+        margin: 0 0 16px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+    }
+    .field {
+        display: grid;
+        gap: 8px;
+    }
+    label {
+        font-size: 16px;
+        font-weight: 700;
+    }
+    input {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.10);
+        color: #fff;
+        outline: none;
+        font-family: Cambria, serif;
+        font-size: 16px;
+    }
+
+    .create-actions {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 6px;
+    }
     .add-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         min-height: 54px;
-        padding: 0 28px;
+        padding: 0 30px;
         border-radius: 18px;
         border: none;
         cursor: pointer;
@@ -343,6 +406,8 @@ static std::string build_index_page() {
         color: #fff;
         box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     }
+    .add-btn:hover { filter: brightness(1.05); }
+    .add-btn:active { transform: translateY(1px); }
 
     .table-wrap {
         width: 100%;
@@ -403,31 +468,6 @@ static std::string build_index_page() {
     .del { background: linear-gradient(135deg, var(--danger), #c9184a); }
     .empty { padding: 24px; text-align: center; opacity: 0.9; }
 
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 14px;
-    }
-    .field { display: grid; gap: 8px; }
-    label { font-size: 16px; font-weight: 700; }
-    input {
-        width: 100%;
-        padding: 13px 14px;
-        border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.14);
-        background: rgba(255,255,255,0.10);
-        color: #fff;
-        outline: none;
-        font-family: Cambria, serif;
-        font-size: 16px;
-    }
-
     .col-id { width: 70px; }
     .col-name { width: 20%; }
     .col-area { width: 85px; }
@@ -453,31 +493,33 @@ static std::string build_index_page() {
         </div>
     </div>
 
-    <form action="/add" method="post">
-        <div class="form-grid">
-            <div class="field">
-                <label>ФИО</label>
-                <input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ">
+    <div class="create-card">
+        <h2 class="create-card-title">Создание нового участника</h2>
+        <form action="/add" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label>ФИО</label>
+                    <input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ">
+                </div>
+                <div class="field">
+                    <label>Адрес</label>
+                    <input name="address" required placeholder="238050, Гусевский р-н, г. Гусев, ул.Школьная, д.17, кв.3">
+                </div>
             </div>
-            <div class="field">
-                <label>Адрес</label>
-                <input name="address" required placeholder="238050, Гусевский р-н, г. Гусев, ул.Школьная, д.17, кв.3">
+
+            <div class="form-row">
+                <div class="field"><label>Площадь квартиры</label><input name="area" required placeholder="78.6"></div>
+                <div class="field"><label>Лицевой счёт</label><input name="account" required placeholder="269088081"></div>
+                <div class="field"><label>Размер взноса</label><input name="contribution" required placeholder="8.9"></div>
+                <div class="field"><label>Перерасчёт</label><input name="recalculation" required placeholder="0"></div>
+                <div class="field"><label>Задолженность</label><input name="debt" required placeholder="0"></div>
             </div>
-        </div>
 
-        <div class="form-row">
-            <div class="field"><label>Площадь квартиры</label><input name="area" required placeholder="78.6"></div>
-            <div class="field"><label>Лицевой счёт</label><input name="account" required placeholder="269088081"></div>
-            <div class="field"><label>Размер взноса</label><input name="contribution" required placeholder="8.9"></div>
-            <div class="field"><label>Перерасчёт</label><input name="recalculation" required placeholder="0"></div>
-            <div class="field"><label>Задолженность</label><input name="debt" required placeholder="0"></div>
-        </div>
-
-        <div style="height: 16px;"></div>
-        <button class="add-btn" type="submit">Создать участника</button>
-    </form>
-
-    <div style="height: 18px;"></div>
+            <div class="create-actions">
+                <button class="add-btn" type="submit">Создать участника</button>
+            </div>
+        </form>
+    </div>
 
     <div class="table-wrap">
         <table>
