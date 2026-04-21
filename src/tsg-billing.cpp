@@ -750,7 +750,7 @@ std::string TSGBilling::build_document_style() const {
         text-align: center;
     }
     .doc-info {
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.05;
         font-family: Cambria, serif;
         margin: 0;
@@ -760,13 +760,6 @@ std::string TSGBilling::build_document_style() const {
         line-height: 1.05;
         font-family: Cambria, serif;
         margin: 0;
-    }
-    .note-strong {
-        text-align: center;
-        font-weight: 700;
-        margin: 0;
-        line-height: 1.05;
-        font-size: 11px;
     }
     .separator {
         border: 0;
@@ -919,14 +912,13 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
         doc << R"html(</div>
 
-<div class="note-strong">УВАЖАЕМЫЕ СОБСТВЕННИКИ ПОМЕЩЕНИЙ!</div><p class="note">В соответствии с Законом Калининградской области от 26.12.2013 № 293, от 19.12.2016 № 42, минимальный размер взноса на капитальный ремонт на 2015,2016,2017 года установлен в размере 5,9 руб. за один квадратный метр общей площади помещения в многоквартирном доме. В соответствии с ч.14.1. ст.155 ЖК РФ собственники помещений в многоквартирном доме, несвоевременно и (или) не полностью уплатившие взносы на капитальный ремонт, обязаны уплатить пени в размере ставки рефинансирования ЦБ РФ. Если оплата не производится, то задолженность взыскивается в судебном порядке, при этом к сумме задолженности и пени прибавляется сумма понесенных судебных расходов. Телефон для справок: 89216190701 Прием звонков: понедельник – пятница с 08.00-17.00</p><div class="note-strong">ОПЛАТА ПРОИЗВОДИТСЯ ПО АДРЕСУ: Г. ГУСЕВ, УЛ. ПОБЕДЫ, 4</div><div class="note-strong">КАБИНЕТ №3 (ВТОРОЙ ЭТАЖ)</div><div class="note-strong">РО КАЛИНИНГРАДСКИЙ РФ АО РОССЕЛЬХОЗБАНК</div><hr class="separator">
 </div>)html";
 
         return doc.str();
     };
 
     out << build_one_document(date_out.str());
-    out << build_one_document(next_date_out.str());
+    // out << build_one_document(next_date_out.str());
     return out.str();
 }
 
