@@ -38,7 +38,11 @@ private:
     [[nodiscard]] std::string html_escape(std::string_view s) const;
     [[nodiscard]] std::string format_money(double x) const;
     [[nodiscard]] std::string build_edit_page(Member const &m) const;
+    [[nodiscard]] std::string build_document_style() const;
+    [[nodiscard]] std::string build_member_document_body(Member const &m) const;
+    [[nodiscard]] std::string build_document_buttons() const;
     [[nodiscard]] std::string build_member_document(Member const &m) const;
+    [[nodiscard]] std::string build_all_members_documents() const;
     [[nodiscard]] double to_double(std::string_view s) const;
 
 

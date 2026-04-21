@@ -138,6 +138,13 @@ void TSGBilling::run() {
         }
     });
 
+    m_server.Get("/documents", [this](const httplib::Request &req, httplib::Response &res) {
+        syslog(LOG_INFO, "Поступил запрос('/documents') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
+               req.local_addr.c_str(), req.local_port);
+        load_users();
+        res.set_content(build_all_members_documents(), "text/html; charset=utf-8");
+    });
+
     syslog(LOG_NOTICE, "Запущен сервер на http://127.0.0.1:%d", m_config.port);
     m_server.listen("0.0.0.0", m_config.port);
 }
@@ -672,7 +679,143 @@ std::string TSGBilling::build_edit_page(Member const &m) const {
 </html>)html";
     return out.str();
 }
-std::string TSGBilling::build_member_document(Member const &m) const {
+std::string TSGBilling::build_document_style() const {
+    return R"html(
+<style>
+    :root {
+        --bg1: #1f2a44;
+        --bg2: #243b55;
+        --paper: rgba(255,255,255,0.95);
+        --text: #1f2a44;
+        --accent: #0b5ed7;
+        --line: #d7dce3;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        background: linear-gradient(135deg, var(--bg1), var(--bg2));
+        font-family: Cambria, serif;
+        padding: 12px;
+        color: var(--text);
+    }
+    .paper {
+        max-width: 980px;
+        margin: 0 auto;
+        background: var(--paper);
+        border-radius: 14px;
+        padding: 16px 20px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+        margin-bottom: 20px;
+    }
+    .topline, .bottom-note {
+        white-space: pre-wrap;
+        font-size: 15px;
+        line-height: 1.15;
+        font-family: Cambria, serif;
+    }
+    .topline {
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .topline .date-line {
+        margin-top: 0;
+        font-weight: 700;
+    }
+    .meta {
+        width: 72%;
+        max-width: 720px;
+        margin: 10px 0 10px 0;
+        margin-right: auto;
+        margin-left: 0;
+        border-collapse: collapse;
+        font-family: Cambria, serif;
+    }
+    .calc {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+        font-family: Cambria, serif;
+    }
+    .meta th, .meta td, .calc th, .calc td {
+        border: 1px solid var(--line);
+        padding: 6px 8px;
+        font-size: 14px;
+        vertical-align: middle;
+        font-family: Cambria, serif;
+        text-align: center;
+    }
+    .meta th, .calc th {
+        background: #f2f6fb;
+        text-align: center;
+    }
+    .doc-info {
+        font-size: 10px;
+        line-height: 1.05;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+    .note {
+        font-size: 11px;
+        line-height: 1.05;
+        font-family: Cambria, serif;
+        margin: 0;
+    }
+    .note-strong {
+        text-align: center;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.05;
+        font-size: 11px;
+    }
+    .separator {
+        border: 0;
+        border-top: 1px dashed #666;
+        margin: 6px 0 0;
+        height: 0;
+    }
+    .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 0 auto 16px;
+        max-width: 980px;
+    }
+    a.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #fff;
+        background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+        font-family: Cambria, serif;
+        font-size: 14px;
+    }
+    .print { background: linear-gradient(135deg, #198754, #146c43); }
+    @media print {
+        body { background: #fff; padding: 0; }
+        .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; margin-bottom: 0; }
+        .actions { display: none; }
+    }
+</style>
+)html";
+}
+
+std::string TSGBilling::build_document_buttons() const {
+    std::ostringstream out;
+    out << R"html(<div class="paper">
+<div class="actions">
+    <a class="btn" href="/">Назад</a>
+    <a class="btn print" href="javascript:window.print()">Печать</a>
+</div>
+</div>)html";
+    return out.str();
+}
+
+std::string TSGBilling::build_member_document_body(Member const &m) const {
     std::ostringstream out;
 
     auto now = std::chrono::system_clock::now();
@@ -782,145 +925,52 @@ std::string TSGBilling::build_member_document(Member const &m) const {
         return doc.str();
     };
 
+    out << build_one_document(date_out.str());
+    out << build_one_document(next_date_out.str());
+    return out.str();
+}
+
+std::string TSGBilling::build_member_document(Member const &m) const {
+    std::ostringstream out;
     out << R"html(<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Платёжный документ</title>
-<style>
-    :root {
-        --bg1: #1f2a44;
-        --bg2: #243b55;
-        --paper: rgba(255,255,255,0.95);
-        --text: #1f2a44;
-        --accent: #0b5ed7;
-        --line: #d7dce3;
-    }
-    * { box-sizing: border-box; }
-    body {
-        margin: 0;
-        background: linear-gradient(135deg, var(--bg1), var(--bg2));
-        font-family: Cambria, serif;
-        padding: 12px;
-        color: var(--text);
-    }
-    .paper {
-        max-width: 980px;
-        margin: 0 auto;
-        background: var(--paper);
-        border-radius: 14px;
-        padding: 16px 20px;
-        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
-        margin-bottom: 20px;
-    }
-    .topline, .bottom-note {
-        white-space: pre-wrap;
-        font-size: 15px;
-        line-height: 1.15;
-        font-family: Cambria, serif;
-    }
-    .topline {
-        text-align: center;
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-    .topline .date-line {
-        margin-top: 0;
-        font-weight: 700;
-    }
-    .meta {
-        width: 72%;
-        max-width: 720px;
-        margin: 10px 0 10px 0;
-        margin-right: auto;
-        margin-left: 0;
-        border-collapse: collapse;
-        font-family: Cambria, serif;
-    }
-    .calc {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 10px 0;
-        font-family: Cambria, serif;
-    }
-    .meta th, .meta td, .calc th, .calc td {
-        border: 1px solid var(--line);
-        padding: 6px 8px;
-        font-size: 14px;
-        vertical-align: middle;
-        font-family: Cambria, serif;
-        text-align: center;
-    }
-    .meta th, .calc th {
-        background: #f2f6fb;
-        text-align: center;
-    }
-    .doc-info {
-        font-size: 10px;
-        line-height: 1.05;
-        font-family: Cambria, serif;
-        margin: 0;
-    }
-    .note {
-        font-size: 11px;
-        line-height: 1.05;
-        font-family: Cambria, serif;
-        margin: 0;
-    }
-    .note-strong {
-        text-align: center;
-        font-weight: 700;
-        margin: 0;
-        line-height: 1.05;
-        font-size: 11px;
-    }
-    .separator {
-        border: 0;
-        border-top: 1px dashed #666;
-        margin: 6px 0 0;
-        height: 0;
-    }
-    .actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-    a.btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 40px;
-        padding: 0 14px;
-        border-radius: 12px;
-        text-decoration: none;
-        color: #fff;
-        background: linear-gradient(135deg, #0b5ed7, #0a58ca);
-        font-family: Cambria, serif;
-        font-size: 14px;
-    }
-    .print { background: linear-gradient(135deg, #198754, #146c43); }
-    @media print {
-        body { background: #fff; padding: 0; }
-        .paper { box-shadow: none; border-radius: 0; max-width: none; padding: 10px 14px; margin-bottom: 0; }
-        .actions { display: none; }
-    }
-</style>
-</head>
+)html";
+    out << build_document_style();
+    out << R"html(</head>
 <body>
 )html";
+    out << build_member_document_body(m);
+    out << build_document_buttons();
+    out << R"html(
+</body>
+</html>)html";
+    return out.str();
+}
 
-    out << build_one_document(date_out.str());
-    out << build_one_document(next_date_out.str());
+std::string TSGBilling::build_all_members_documents() const {
+    std::ostringstream out;
+    out << R"html(<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Платёжные документы</title>
+)html";
+    out << build_document_style();
+    out << R"html(</head>
+<body>
+)html";
+    out << build_document_buttons();
+
+    for (const auto &m : m_members) {
+        out << build_member_document_body(m);
+    }
 
     out << R"html(
-<div class="paper">
-<div class="actions">
-    <a class="btn" href="/">Назад</a>
-    <a class="btn print" href="javascript:window.print()">Печать</a>
-</div>
-</div>
 </body>
 </html>)html";
     return out.str();
