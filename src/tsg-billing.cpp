@@ -750,7 +750,7 @@ std::string TSGBilling::build_document_style() const {
         text-align: center;
     }
     .doc-info {
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.05;
         font-family: Cambria, serif;
         margin: 0;
@@ -911,7 +911,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
 <div><b>Итого к оплате:</b> )html";
         doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
         doc << R"html(</div>
-
+<hr class="separator">
 </div>)html";
 
         return doc.str();
