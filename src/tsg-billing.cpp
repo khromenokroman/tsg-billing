@@ -240,6 +240,32 @@ std::string TSGBilling::build_index_page() const {
         font-size: 18px;
         opacity: 0.88;
     }
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .header-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 18px;
+        border-radius: 18px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: Cambria, serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+        white-space: nowrap;
+    }
+    .print-all {
+        background: linear-gradient(135deg, #8ecae6, #219ebc);
+    }
 
     .create-card {
         width: 100%;
@@ -395,6 +421,9 @@ std::string TSGBilling::build_index_page() const {
         <div>
             <h1>Участники ТСЖ</h1>
             <p class="subtitle">Добавление, просмотр, удаление, редактирование и генерация платёжного документа.</p>
+        </div>
+        <div class="header-actions">
+            <a class="header-btn print-all" href="/documents">Печатать все квитанции</a>
         </div>
     </div>
 
