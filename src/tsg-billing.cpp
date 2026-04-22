@@ -1,7 +1,9 @@
 #include "tsg-billing.hpp"
+
 #include <fmt/format.h>
-#include <fstream>
 #include <syslog.h>
+
+#include <fstream>
 
 TSGBilling::TSGBilling() {
     openlog("TSGbilling", LOG_PID | LOG_CONS, LOG_USER);
@@ -23,8 +25,7 @@ TSGBilling::TSGBilling() {
 }
 void TSGBilling::run() {
     m_server.Get("/", [this](httplib::Request const &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(), req.local_port);
         load_users();
         res.set_content(build_index_page(), "text/html; charset=utf-8");
     });
@@ -34,17 +35,16 @@ void TSGBilling::run() {
     // });
 
     m_server.Get("/add-member", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/add-member') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/add-member') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         res.set_content(build_add_member_page(), "text/html; charset=utf-8");
     });
 
     m_server.Post("/add", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/add') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/add') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         Member m;
-        auto const it =
-                std::ranges::max_element(m_members, [](Member const &a, Member const &b) { return a.id < b.id; });
+        auto const it = std::ranges::max_element(m_members, [](Member const &a, Member const &b) { return a.id < b.id; });
         if (it != m_members.end()) {
             m.id = it->id + 1;
         } else {
@@ -65,8 +65,8 @@ void TSGBilling::run() {
     });
 
     m_server.Get("/edit", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/edit') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/edit') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         if (!req.has_param("id")) {
             res.status = 404;
             res.set_content("Участник не найден", "text/plain; charset=utf-8");
@@ -86,8 +86,8 @@ void TSGBilling::run() {
     });
 
     m_server.Post("/update", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/update') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/update') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         if (!req.has_param("id")) {
             res.status = 404;
             res.set_content("Участник не найден", "text/plain; charset=utf-8");
@@ -115,12 +115,11 @@ void TSGBilling::run() {
     });
 
     m_server.Get("/delete", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/delete') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/delete') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         if (req.has_param("id")) {
             int id = std::stoi(req.get_param_value("id"));
-            m_members.erase(std::ranges::remove_if(m_members, [id](const Member &m) { return m.id == id; }).begin(),
-                            m_members.end());
+            m_members.erase(std::ranges::remove_if(m_members, [id](const Member &m) { return m.id == id; }).begin(), m_members.end());
             save_data();
         }
         res.set_redirect("/");
@@ -145,8 +144,8 @@ void TSGBilling::run() {
     });
 
     m_server.Get("/documents", [this](const httplib::Request &req, httplib::Response &res) {
-        syslog(LOG_INFO, "Поступил запрос('/documents') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
-               req.local_addr.c_str(), req.local_port);
+        syslog(LOG_INFO, "Поступил запрос('/documents') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port, req.local_addr.c_str(),
+               req.local_port);
         load_users();
         res.set_content(build_all_members_documents(), "text/html; charset=utf-8");
     });
@@ -382,7 +381,7 @@ std::string TSGBilling::build_index_page() const {
     if (m_members.empty()) {
         out << R"html(<tr><td class="empty" colspan="9">Список участников пока пуст.</td></tr>)html";
     } else {
-        for (const auto &m: m_members) {
+        for (const auto &m : m_members) {
             out << "<tr>";
             out << "<td class=\"num-cell\">" << m.id << "</td>";
             out << "<td class=\"text-cell\">" << html_escape(m.fio) << "</td>";
@@ -565,7 +564,7 @@ std::string TSGBilling::build_add_member_page() const {
 std::string TSGBilling::html_escape(std::string_view s) const {
     std::string out;
     out.reserve(s.size() * 2);
-    for (char c: s) {
+    for (char c : s) {
         switch (c) {
             case '&':
                 out += "&amp;";
@@ -593,9 +592,8 @@ std::string TSGBilling::format_money(double x) const {
     std::ostringstream out;
     out << std::fixed << std::setprecision(2) << x;
     std::string s = out.str();
-    for (char &c: s) {
-        if (c == '.')
-            c = ',';
+    for (char &c : s) {
+        if (c == '.') c = ',';
     }
     return s;
 }
@@ -1045,7 +1043,7 @@ std::string TSGBilling::build_all_members_documents() const {
 )html";
     out << build_document_buttons();
 
-    for (const auto &m: m_members) {
+    for (const auto &m : m_members) {
         out << build_member_document_body(m);
     }
 
@@ -1057,7 +1055,7 @@ std::string TSGBilling::build_all_members_documents() const {
 double TSGBilling::to_double(std::string_view s) const {
     std::string t;
     t.reserve(s.size());
-    for (auto const &symbol: s) {
+    for (auto const &symbol : s) {
         if (symbol == ',') {
             t.push_back('.');
         } else {

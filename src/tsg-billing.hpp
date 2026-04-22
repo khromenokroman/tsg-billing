@@ -1,5 +1,6 @@
 #pragma once
 #include <httplib.h>
+
 #include <nlohmann/json.hpp>
 
 struct Member {
@@ -16,22 +17,22 @@ struct Member {
 };
 
 struct Config {
-    std::string receiver_name{}; // 32
+    std::string receiver_name{};    // 32
     std::string receiver_details{}; // 32
-    std::string path_db{}; // 32
-    int port{}; // 4
-    int log_level{}; // 4
+    std::string path_db{};          // 32
+    int port{};                     // 4
+    int log_level{};                // 4
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Config, path_db, port, log_level, receiver_name, receiver_details)
 };
 using members = std::vector<Member>;
 
 class TSGBilling {
-public:
+   public:
     TSGBilling();
     void run();
 
-private:
+   private:
     void load_users();
     void save_data();
     [[nodiscard]] std::string build_index_page() const;
@@ -46,9 +47,8 @@ private:
     [[nodiscard]] std::string build_all_members_documents() const;
     [[nodiscard]] double to_double(std::string_view s) const;
 
-
-    httplib::Server m_server; // 752
-    Config m_config; // 40
-    members m_members; // 24
+    httplib::Server m_server;                                 // 752
+    Config m_config;                                          // 40
+    members m_members;                                        // 24
     std::string_view m_file_cfg{"/etc/tsg-billing/cfg.json"}; // 16
 };

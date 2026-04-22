@@ -1,6 +1,5 @@
 #include "tsg-billing.hpp"
 
-
 int main() {
     try {
         TSGBilling().run();
