@@ -35,6 +35,7 @@ private:
     void load_users();
     void save_data();
     [[nodiscard]] std::string build_index_page() const;
+    [[nodiscard]] std::string build_add_member_page() const;
     [[nodiscard]] std::string html_escape(std::string_view s) const;
     [[nodiscard]] std::string format_money(double x) const;
     [[nodiscard]] std::string build_edit_page(Member const &m) const;

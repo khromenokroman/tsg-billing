@@ -33,6 +33,12 @@ void TSGBilling::run() {
     //     res.set_content(build_index_page(), "text/html; charset=utf-8");
     // });
 
+    m_server.Get("/add-member", [this](const httplib::Request &req, httplib::Response &res) {
+        syslog(LOG_INFO, "Поступил запрос('/add-member') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
+               req.local_addr.c_str(), req.local_port);
+        res.set_content(build_add_member_page(), "text/html; charset=utf-8");
+    });
+
     m_server.Post("/add", [this](const httplib::Request &req, httplib::Response &res) {
         syslog(LOG_INFO, "Поступил запрос('/add') от %s:%d на %s:%d", req.remote_addr.c_str(), req.remote_port,
                req.local_addr.c_str(), req.local_port);
@@ -187,12 +193,9 @@ std::string TSGBilling::build_index_page() const {
         --bg1: #1f2a44;
         --bg2: #243b55;
         --text: #f5f5f5;
-        --accent: #ffd166;
         --accent2: #06d6a0;
         --danger: #ef476f;
         --shadow: 0 12px 30px rgba(0,0,0,0.28);
-        --card: rgba(255,255,255,0.08);
-        --card2: rgba(255,255,255,0.06);
         --line: rgba(255,255,255,0.12);
     }
     * { box-sizing: border-box; }
@@ -266,79 +269,9 @@ std::string TSGBilling::build_index_page() const {
     .print-all {
         background: linear-gradient(135deg, #8ecae6, #219ebc);
     }
-
-    .create-card {
-        width: 100%;
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        box-shadow: 0 10px 24px rgba(0,0,0,0.16);
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    .create-card-title {
-        margin: 0 0 16px;
-        font-size: 22px;
-        font-weight: 700;
-        color: #fff;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        margin-bottom: 14px;
-    }
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 14px;
-    }
-    .field {
-        display: grid;
-        gap: 8px;
-    }
-    label {
-        font-size: 16px;
-        font-weight: 700;
-    }
-    input {
-        width: 100%;
-        padding: 13px 14px;
-        border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.14);
-        background: rgba(255,255,255,0.10);
-        color: #fff;
-        outline: none;
-        font-family: Cambria, serif;
-        font-size: 16px;
-    }
-
-    .create-actions {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        margin-top: 6px;
-    }
-    .add-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 54px;
-        padding: 0 30px;
-        border-radius: 18px;
-        border: none;
-        cursor: pointer;
-        text-decoration: none;
-        font-family: Cambria, serif;
-        font-size: 18px;
-        font-weight: 700;
+    .add-member {
         background: linear-gradient(135deg, var(--accent2), #118ab2);
-        color: #fff;
-        box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     }
-    .add-btn:hover { filter: brightness(1.05); }
-    .add-btn:active { transform: translateY(1px); }
 
     .table-wrap {
         width: 100%;
@@ -423,36 +356,9 @@ std::string TSGBilling::build_index_page() const {
             <p class="subtitle">Добавление, просмотр, удаление, редактирование и генерация платёжного документа.</p>
         </div>
         <div class="header-actions">
+            <a class="header-btn add-member" href="/add-member">Добавить участника</a>
             <a class="header-btn print-all" href="/documents">Печатать все квитанции</a>
         </div>
-    </div>
-
-    <div class="create-card">
-        <h2 class="create-card-title">Создание нового участника</h2>
-        <form action="/add" method="post">
-            <div class="form-grid">
-                <div class="field">
-                    <label>ФИО</label>
-                    <input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ">
-                </div>
-                <div class="field">
-                    <label>Адрес</label>
-                    <input name="address" required placeholder="238050, Гусевский р-н, г. Гусев, ул.Школьная, д.17, кв.3">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="field"><label>Площадь квартиры</label><input name="area" required placeholder="78.6"></div>
-                <div class="field"><label>Лицевой счёт</label><input name="account" required placeholder="269088081"></div>
-                <div class="field"><label>Размер взноса</label><input name="contribution" required placeholder="8.9"></div>
-                <div class="field"><label>Перерасчёт</label><input name="recalculation" required placeholder="0"></div>
-                <div class="field"><label>Задолженность</label><input name="debt" required placeholder="0"></div>
-            </div>
-
-            <div class="create-actions">
-                <button class="add-btn" type="submit">Создать участника</button>
-            </div>
-        </form>
     </div>
 
     <div class="table-wrap">
@@ -504,6 +410,158 @@ std::string TSGBilling::build_index_page() const {
 </html>)html";
     return out.str();
 }
+
+std::string TSGBilling::build_add_member_page() const {
+    std::ostringstream out;
+    out << R"html(<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Добавление участника</title>
+<style>
+    :root {
+        --bg1: #1f2a44;
+        --bg2: #243b55;
+        --text: #f5f5f5;
+        --accent2: #06d6a0;
+        --shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Cambria, serif;
+        color: var(--text);
+        background:
+            radial-gradient(circle at top left, rgba(255,209,102,0.20), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(6,214,160,0.18), transparent 30%),
+            linear-gradient(135deg, var(--bg1), var(--bg2));
+        padding: 24px;
+    }
+    .wrapper {
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+        background: rgba(255,255,255,0.06);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        padding: 34px;
+    }
+    h1 {
+        margin: 0 0 20px;
+        font-size: 36px;
+        text-align: center;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+    .pair-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+    }
+    .field { display: grid; gap: 8px; }
+    label { font-size: 16px; font-weight: 700; }
+    input {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.10);
+        color: #fff;
+        outline: none;
+        font-family: Cambria, serif;
+        font-size: 16px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 28px;
+        border-radius: 18px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: Cambria, serif;
+        font-size: 18px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent2), #118ab2);
+        color: #fff;
+    }
+    .back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 28px;
+        border-radius: 18px;
+        text-decoration: none;
+        font-family: Cambria, serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+    <h1>Добавление участника</h1>
+    <form action="/add" method="post">
+        <div class="form-grid">
+            <div class="field">
+                <label>ФИО</label>
+                <input name="fio" required placeholder="КУЗНЕЦОВ ВЛАДИМИР КОНСТАНТИНОВИЧ">
+            </div>
+            <div class="field">
+                <label>Адрес</label>
+                <input name="address" required placeholder="238050, Гусевский р-н, г. Гусев, ул.Школьная, д.17, кв.3">
+            </div>
+        </div>
+
+        <div class="pair-grid">
+            <div class="field">
+                <label>Площадь квартиры</label>
+                <input name="area" required placeholder="78.6">
+            </div>
+            <div class="field">
+                <label>Лицевой счёт</label>
+                <input name="account" required placeholder="269088081">
+            </div>
+            <div class="field">
+                <label>Размер взноса</label>
+                <input name="contribution" required placeholder="8.9">
+            </div>
+            <div class="field">
+                <label>Перерасчёт</label>
+                <input name="recalculation" required placeholder="0">
+            </div>
+            <div class="field">
+                <label>Задолженность</label>
+                <input name="debt" required placeholder="0">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn" type="submit">Создать участника</button>
+            <a class="back" href="/">Отмена</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>)html";
+    return out.str();
+}
+
 std::string TSGBilling::html_escape(std::string_view s) const {
     std::string out;
     out.reserve(s.size() * 2);
@@ -987,7 +1045,7 @@ std::string TSGBilling::build_all_members_documents() const {
 )html";
     out << build_document_buttons();
 
-    for (const auto &m : m_members) {
+    for (const auto &m: m_members) {
         out << build_member_document_body(m);
     }
 
