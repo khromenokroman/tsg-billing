@@ -48,7 +48,7 @@ class TSGBilling {
     [[nodiscard]] double to_double(std::string_view s) const;
 
     httplib::Server m_server;                                 // 752
-    Config m_config;                                          // 40
+    Config m_config;                                          // 104
     members m_members;                                        // 24
     std::string_view m_file_cfg{"/etc/tsg-billing/cfg.json"}; // 16
 };
