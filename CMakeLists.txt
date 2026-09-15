@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(tsg-billing
-        VERSION 0.4.0
+        VERSION 0.4.1
         LANGUAGES CXX
         HOMEPAGE_URL "")
 
