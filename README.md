@@ -14,9 +14,10 @@
 - `fmt`
 - `nlohmann-json`
 - `libcpp-httplib`
+- `libqrencode`
 
 ````bash
-apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev libcpp-httplib-dev
+apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev libcpp-httplib-dev libqrencode-dev
 ````
 
 ## Сборка из исходников
@@ -96,7 +97,12 @@ apt install -y ./tsg-billing_<версия>_amd64.deb
   "log_level": 6,
   "path_db": "/var/tsg-billing/tsg-billing.json",
   "receiver_name": "ТСЖ \"Рога и Копыта\"",
-  "receiver_details": "ИНН 3902202236, КПП 390201001, р\\с 40305810822050000170, к\\с 20101210500777000878, БИК 042748900"
+  "qr_payee_inn": "3902202236",
+  "qr_payee_kpp": "390201001",
+  "qr_bank_name": "",
+  "qr_bic": "042748900",
+  "qr_personal_acc": "40305810822050000170",
+  "qr_corresp_acc": "20101210500777000878"
 }
 ````
 
@@ -104,7 +110,7 @@ apt install -y ./tsg-billing_<версия>_amd64.deb
 - `log_level` — уровень логирования для `syslog`
 - `path_db` — путь до БД
 - `receiver_name` — наименование получателя платежей
-- `receiver_details` — детали получателя платежей
+- `qr_payee_inn`, `qr_payee_kpp`, `qr_bank_name`, `qr_bic`, `qr_personal_acc`, `qr_corresp_acc` — реквизиты получателя платежей. Используются как для строки «Реквизиты:» в квитанции, так и для платёжного QR-кода (формат ST00012, ГОСТ Р 56042-2014); QR распознаётся приложениями Сбербанк Онлайн, Т-Банк, ВТБ и др. Незаполненные поля просто пропускаются в строке реквизитов; если `qr_personal_acc` или `qr_bic` не заданы — QR-код на квитанции не печатается
 
 Возможные уровнилогирования:
 
