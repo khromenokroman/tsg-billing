@@ -1,8 +1,10 @@
 #include "tsg-billing.hpp"
 
 #include <fmt/format.h>
+#include <qrencode.h>
 #include <syslog.h>
 
+#include <cmath>
 #include <fstream>
 
 TSGBilling::TSGBilling() {
@@ -20,6 +22,12 @@ TSGBilling::TSGBilling() {
     m_config = cfg.get<Config>();
     m_config.port = cfg.value("port", 8080);
     m_config.path_db = cfg.at("path_db");
+    m_config.qr_bank_name = cfg.value("qr_bank_name", "");
+    m_config.qr_bic = cfg.value("qr_bic", "");
+    m_config.qr_personal_acc = cfg.value("qr_personal_acc", "");
+    m_config.qr_corresp_acc = cfg.value("qr_corresp_acc", "");
+    m_config.qr_payee_inn = cfg.value("qr_payee_inn", "");
+    m_config.qr_payee_kpp = cfg.value("qr_payee_kpp", "");
     setlogmask(LOG_UPTO(m_config.log_level));
     syslog(LOG_INFO, "Получены настройки:\n%s", cfg.dump(1).c_str());
 }
@@ -852,6 +860,32 @@ std::string TSGBilling::build_document_style() const {
         margin: 6px 0 0;
         height: 0;
     }
+    .top-block {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .top-left {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .qr-block {
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .qr-svg {
+        width: 110px;
+        height: 110px;
+        display: block;
+    }
+    .qr-caption {
+        font-size: 10px;
+        line-height: 1.2;
+        margin-top: 2px;
+        font-family: Cambria, serif;
+    }
     .actions {
         display: flex;
         gap: 10px;
@@ -880,6 +914,89 @@ std::string TSGBilling::build_document_style() const {
     }
 </style>
 )html";
+}
+
+std::string TSGBilling::build_receiver_details() const {
+    std::vector<std::string> parts;
+    if (!m_config.qr_bank_name.empty()) {
+        parts.push_back(m_config.qr_bank_name);
+    }
+    if (!m_config.qr_payee_inn.empty()) {
+        parts.push_back("ИНН " + m_config.qr_payee_inn);
+    }
+    if (!m_config.qr_payee_kpp.empty()) {
+        parts.push_back("КПП " + m_config.qr_payee_kpp);
+    }
+    if (!m_config.qr_personal_acc.empty()) {
+        parts.push_back("р/с " + m_config.qr_personal_acc);
+    }
+    if (!m_config.qr_corresp_acc.empty()) {
+        parts.push_back("к/с " + m_config.qr_corresp_acc);
+    }
+    if (!m_config.qr_bic.empty()) {
+        parts.push_back("БИК " + m_config.qr_bic);
+    }
+
+    std::ostringstream out;
+    for (size_t i = 0; i < parts.size(); ++i) {
+        if (i != 0) {
+            out << ", ";
+        }
+        out << parts[i];
+    }
+    return out.str();
+}
+
+std::string TSGBilling::build_payment_qr_payload(double sum) const {
+    if (m_config.qr_personal_acc.empty() || m_config.qr_bic.empty()) {
+        return {};
+    }
+
+    long long const kopecks = std::llround(sum * 100.0);
+
+    return fmt::format(
+        "ST00012|Name={}|PersonalAcc={}|BankName={}|BIC={}|CorrespAcc={}|PayeeINN={}|KPP={}|Sum={}|Purpose={}",
+        m_config.receiver_name, m_config.qr_personal_acc, m_config.qr_bank_name, m_config.qr_bic,
+        m_config.qr_corresp_acc, m_config.qr_payee_inn, m_config.qr_payee_kpp, kopecks,
+        "Взнос на капитальный ремонт общего имущества в многоквартирном доме");
+}
+
+std::string TSGBilling::build_qr_svg(std::string const &payload) const {
+    if (payload.empty()) {
+        return {};
+    }
+
+    QRcode *qr = QRcode_encodeString(payload.c_str(), 0, QR_ECLEVEL_M, QR_MODE_8, 1);
+    if (qr == nullptr) {
+        syslog(LOG_ERR, "Не удалось сформировать QR-код для оплаты");
+        return {};
+    }
+
+    int const width = qr->width;
+    std::ostringstream svg;
+    svg << "<svg class=\"qr-svg\" viewBox=\"0 0 " << width << " " << width
+        << "\" xmlns=\"http://www.w3.org/2000/svg\" shape-rendering=\"crispEdges\">";
+    svg << "<rect width=\"" << width << "\" height=\"" << width << "\" fill=\"#fff\"/>";
+
+    for (int y = 0; y < width; ++y) {
+        int x = 0;
+        while (x < width) {
+            if ((qr->data[y * width + x] & 0x01) != 0) {
+                int const run_start = x;
+                while (x < width && (qr->data[y * width + x] & 0x01) != 0) {
+                    ++x;
+                }
+                svg << "<rect x=\"" << run_start << "\" y=\"" << y << "\" width=\"" << (x - run_start)
+                    << "\" height=\"1\" fill=\"#000\"/>";
+            } else {
+                ++x;
+            }
+        }
+    }
+
+    svg << "</svg>";
+    QRcode_free(qr);
+    return svg.str();
 }
 
 std::string TSGBilling::build_document_buttons() const {
@@ -918,6 +1035,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
 
     auto build_one_document = [&](const std::string &period) {
         std::ostringstream doc;
+        double const total = m.area * m.contribution + m.recalculation - m.debt;
 
         doc << R"html(<div class="paper">
 <div class="topline"><div>Адрес: )html";
@@ -926,6 +1044,8 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << period;
         doc << R"html(</div></div>
 
+<div class="top-block">
+<div class="top-left">
 <table class="meta">
 <tr>
     <th>№ лицевого счета</th>
@@ -955,9 +1075,20 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << html_escape(m_config.receiver_name);
         doc << R"html(</div>
 <div class="doc-info"><b>Реквизиты:</b> )html";
-        doc << html_escape(m_config.receiver_details);
+        doc << html_escape(build_receiver_details());
         doc << R"html(</div>
 <div class="doc-info"><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
+</div>)html";
+
+        std::string const qr_svg = build_qr_svg(build_payment_qr_payload(total));
+        if (!qr_svg.empty()) {
+            doc << R"html(<div class="qr-block">)html";
+            doc << qr_svg;
+            doc << R"html(<div class="qr-caption">Отсканируйте<br>для оплаты</div>
+</div>)html";
+        }
+
+        doc << R"html(</div>
 
 <table class="calc">
 <tr>
@@ -985,7 +1116,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << format_money(m.recalculation);
         doc << R"html(</td>
     <td class="right">)html";
-        doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
+        doc << format_money(total);
         doc << R"html(</td>
 </tr>
 </table>
@@ -994,7 +1125,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << format_money(m.debt);
         doc << R"html(</div>
 <div><b>Итого к оплате:</b> )html";
-        doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
+        doc << format_money(total);
         doc << R"html(</div>
 <hr class="separator">
 </div>)html";

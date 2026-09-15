@@ -29,13 +29,23 @@ struct Member {
  * логирования и реквизиты получателя платежей.
  */
 struct Config {
-    std::string receiver_name{};    ///< Наименование получателя платежей.
-    std::string receiver_details{}; ///< Реквизиты получателя платежей.
-    std::string path_db{};          ///< Путь к JSON-базе данных участников.
-    int port{};                     ///< Порт HTTP-сервера.
-    int log_level{};                ///< Уровень логирования syslog.
+    std::string receiver_name{}; ///< Наименование получателя платежей.
+    std::string path_db{};       ///< Путь к JSON-базе данных участников.
+    int port{};                  ///< Порт HTTP-сервера.
+    int log_level{};              ///< Уровень логирования syslog.
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Config, path_db, port, log_level, receiver_name, receiver_details)
+    /// Реквизиты получателя платежей. Используются как для отображения в квитанции ("Реквизиты:"),
+    /// так и для формирования платёжного QR-кода (ГОСТ Р 56042-2014, формат ST00012).
+    /// Необязательны: незаполненные поля просто не попадают в строку реквизитов; если qr_personal_acc
+    /// или qr_bic не заполнены, QR-код на квитанции не печатается.
+    std::string qr_bank_name{};    ///< Наименование банка получателя.
+    std::string qr_bic{};          ///< БИК банка получателя.
+    std::string qr_personal_acc{}; ///< Расчётный счёт получателя.
+    std::string qr_corresp_acc{};  ///< Корреспондентский счёт банка.
+    std::string qr_payee_inn{};    ///< ИНН получателя.
+    std::string qr_payee_kpp{};    ///< КПП получателя.
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Config, path_db, port, log_level, receiver_name)
 };
 using members = std::vector<Member>;
 
@@ -124,6 +134,26 @@ class TSGBilling {
      * @return HTML-код блока кнопок.
      */
     [[nodiscard]] std::string build_document_buttons() const;
+
+    /**
+     * @brief Формирует строку реквизитов получателя платежа для отображения в квитанции.
+     * @return Строка вида "ИНН ..., КПП ..., р/с ..., к/с ..., БИК ...". Незаполненные поля пропускаются.
+     */
+    [[nodiscard]] std::string build_receiver_details() const;
+
+    /**
+     * @brief Формирует строку платёжных данных для QR-кода по стандарту ГОСТ Р 56042-2014 (ST00012).
+     * @param sum Сумма к оплате, руб.
+     * @return Строка для кодирования в QR-код, либо пустая строка, если реквизиты для QR не заданы в конфигурации.
+     */
+    [[nodiscard]] std::string build_payment_qr_payload(double sum) const;
+
+    /**
+     * @brief Формирует SVG-разметку QR-кода по произвольным данным.
+     * @param payload Данные для кодирования.
+     * @return HTML-код SVG-изображения QR-кода, либо пустая строка, если payload пуст.
+     */
+    [[nodiscard]] std::string build_qr_svg(std::string const &payload) const;
 
     /**
      * @brief Формирует страницу платёжного документа для одного участника.

@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(tsg-billing
-        VERSION 0.3.0
+        VERSION 0.4.1
         LANGUAGES CXX
         HOMEPAGE_URL "")
 
 set(CMAKE_CXX_STANDARD 20)
 find_package(fmt REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(QRENCODE REQUIRED libqrencode)
 
 configure_file(Version.in Version @ONLY)
 
@@ -13,7 +15,9 @@ add_executable(${PROJECT_NAME}
         src/main.cpp
         src/tsg-billing.cpp
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt cpp-httplib)
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt cpp-httplib ${QRENCODE_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${QRENCODE_INCLUDE_DIRS})
+target_link_directories(${PROJECT_NAME} PRIVATE ${QRENCODE_LIBRARY_DIRS})
 
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

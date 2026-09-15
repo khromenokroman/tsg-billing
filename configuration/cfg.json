@@ -1,7 +1,12 @@
 {
-  "port": 80,
+  "port": 8080,
   "log_level": 6,
   "path_db": "/var/tsg-billing/tsg-billing.json",
   "receiver_name": "ТСЖ \"Рога и Копыта\"",
-  "receiver_details": "ИНН 3902202236, КПП 390201001, р\\с 40305810822050000170, к\\с 20101210500777000878, БИК 042748900"
+  "qr_payee_inn": "3902202236",
+  "qr_payee_kpp": "390201001",
+  "qr_bank_name": "",
+  "qr_bic": "042748900",
+  "qr_personal_acc": "40305810822050000170",
+  "qr_corresp_acc": "20101210500777000878"
 }
