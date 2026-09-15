@@ -1035,7 +1035,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
 
     auto build_one_document = [&](const std::string &period) {
         std::ostringstream doc;
-        double const total = m.area * m.contribution + m.recalculation - m.debt;
+        double const total = m.area * m.contribution - m.recalculation + m.debt;
 
         doc << R"html(<div class="paper">
 <div class="topline"><div>Адрес: )html";
