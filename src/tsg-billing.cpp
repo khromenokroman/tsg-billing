@@ -860,17 +860,16 @@ std::string TSGBilling::build_document_style() const {
         margin: 6px 0 0;
         height: 0;
     }
-    .totals-row {
+    .top-block {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
+        align-items: flex-start;
         gap: 12px;
         flex-wrap: wrap;
-        font-family: Cambria, serif;
     }
-    .totals-text {
-        font-size: 15px;
-        line-height: 1.3;
+    .top-left {
+        flex: 1 1 auto;
+        min-width: 0;
     }
     .qr-block {
         text-align: center;
@@ -1036,6 +1035,7 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
 
     auto build_one_document = [&](const std::string &period) {
         std::ostringstream doc;
+        double const total = m.area * m.contribution + m.recalculation - m.debt;
 
         doc << R"html(<div class="paper">
 <div class="topline"><div>Адрес: )html";
@@ -1044,6 +1044,8 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << period;
         doc << R"html(</div></div>
 
+<div class="top-block">
+<div class="top-left">
 <table class="meta">
 <tr>
     <th>№ лицевого счета</th>
@@ -1076,6 +1078,17 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << html_escape(build_receiver_details());
         doc << R"html(</div>
 <div class="doc-info"><b>Назначение платежа:</b> Взнос на капитальный ремонт общего имущества в многоквартирном доме</div>
+</div>)html";
+
+        std::string const qr_svg = build_qr_svg(build_payment_qr_payload(total));
+        if (!qr_svg.empty()) {
+            doc << R"html(<div class="qr-block">)html";
+            doc << qr_svg;
+            doc << R"html(<div class="qr-caption">Отсканируйте<br>для оплаты</div>
+</div>)html";
+        }
+
+        doc << R"html(</div>
 
 <table class="calc">
 <tr>
@@ -1103,30 +1116,16 @@ std::string TSGBilling::build_member_document_body(Member const &m) const {
         doc << format_money(m.recalculation);
         doc << R"html(</td>
     <td class="right">)html";
-        doc << format_money(m.area * m.contribution + m.recalculation - m.debt);
+        doc << format_money(total);
         doc << R"html(</td>
 </tr>
 </table>
 
-<div class="totals-row">
-<div class="totals-text">
 <div>Задолженность: )html";
         doc << format_money(m.debt);
         doc << R"html(</div>
 <div><b>Итого к оплате:</b> )html";
-        double const total = m.area * m.contribution + m.recalculation - m.debt;
         doc << format_money(total);
-        doc << R"html(</div>
-</div>)html";
-
-        std::string const qr_svg = build_qr_svg(build_payment_qr_payload(total));
-        if (!qr_svg.empty()) {
-            doc << R"html(<div class="qr-block">)html";
-            doc << qr_svg;
-            doc << R"html(<div class="qr-caption">Отсканируйте<br>для оплаты</div>
-</div>)html";
-        }
-
         doc << R"html(</div>
 <hr class="separator">
 </div>)html";
