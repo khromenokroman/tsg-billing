@@ -5,7 +5,30 @@ project(tsg-billing
         HOMEPAGE_URL "")
 
 set(CMAKE_CXX_STANDARD 20)
-find_package(fmt REQUIRED)
+
+# fmt и cpp-httplib линкуются статически: в Debian нет .a, а soname
+# libfmt/libcpp-httplib отличается между Debian 12 и 13.
+include(FetchContent)
+set(BUILD_SHARED_LIBS OFF)
+set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(fmt
+        URL https://github.com/fmtlib/fmt/archive/refs/tags/11.1.4.tar.gz
+        URL_HASH SHA256=ac366b7b4c2e9f0dde63a59b3feb5ee59b67974b14ee5dc9ea8ad78aa2c1ee1e
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+# httplib в header-only режиме, без OpenSSL/zlib/brotli (используется только http-сервер)
+set(HTTPLIB_COMPILE OFF CACHE BOOL "" FORCE)
+set(HTTPLIB_INSTALL OFF CACHE BOOL "" FORCE)
+set(HTTPLIB_USE_OPENSSL_IF_AVAILABLE OFF CACHE BOOL "" FORCE)
+set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF CACHE BOOL "" FORCE)
+set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(httplib
+        URL https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.18.7.tar.gz
+        URL_HASH SHA256=b7b1e9e4e77565a5a9bc95e761d5df3e7c0e8ca37c90fd78b1b031bc6cb90fc1
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(fmt httplib)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(QRENCODE REQUIRED libqrencode)
 
@@ -15,7 +38,7 @@ add_executable(${PROJECT_NAME}
         src/main.cpp
         src/tsg-billing.cpp
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt cpp-httplib ${QRENCODE_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt httplib::httplib ${QRENCODE_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${QRENCODE_INCLUDE_DIRS})
 target_link_directories(${PROJECT_NAME} PRIVATE ${QRENCODE_LIBRARY_DIRS})
 
