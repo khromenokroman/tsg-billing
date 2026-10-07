@@ -9,15 +9,14 @@
 
 ### Для сборки
 
-- CMake 3.26+
+- CMake 3.25+
 - C++20
-- `fmt`
 - `nlohmann-json`
-- `libcpp-httplib`
 - `libqrencode`
+- `fmt` и `cpp-httplib` скачиваются при конфигурации CMake (FetchContent) и линкуются статически, нужен доступ в интернет
 
 ````bash
-apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev libcpp-httplib-dev libqrencode-dev
+apt install -y build-essential cmake pkg-config dpkg-dev file ca-certificates nlohmann-json3-dev libqrencode-dev
 ````
 
 ## Сборка из исходников
@@ -34,7 +33,7 @@ cmake --install .
 Пакет собирается через CPack:
 
 ```bash 
-cd build cpack -G DEB
+cd build && cpack -G DEB
 apt install -y ./tsg-billing_<версия>_amd64.deb
 ```
 
@@ -140,3 +139,20 @@ systemctl status tsg-billing
 ```
 
 По умолчанию сервер доступен на: http://localhost
+
+## Релиз
+
+CI собирает DEB-пакеты под Debian 12 и Debian 13. Для публикации релиза
+достаточно поставить тег, совпадающий с версией в `CMakeLists.txt`:
+
+```bash
+git tag v0.4.2
+git push origin v0.4.2
+```
+
+Пакеты `tsg-billing_<версия>_amd64-debian12.deb` и `tsg-billing_<версия>_amd64-debian13.deb`
+появятся в GitHub Releases.
+
+## Лицензия
+
+GPL-3.0 или новее, см. [LICENSE](LICENSE).
