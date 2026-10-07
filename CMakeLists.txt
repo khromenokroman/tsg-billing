@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25.1)
 project(tsg-billing
         VERSION 0.4.3
         LANGUAGES CXX
-        HOMEPAGE_URL "")
+        HOMEPAGE_URL "https://github.com/khromenokroman/tsg-billing")
 
 set(CMAKE_CXX_STANDARD 20)
 
