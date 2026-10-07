@@ -865,10 +865,10 @@ std::string TSGBilling::build_document_style() const {
         justify-content: space-between;
         align-items: flex-start;
         gap: 12px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
     .top-left {
-        flex: 1 1 auto;
+        flex: 1 1 0;
         min-width: 0;
     }
     .qr-block {
