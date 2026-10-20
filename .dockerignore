@@ -1,0 +1,7 @@
+.git
+.github
+.idea
+build
+cmake-build-*
+CLAUDE.md
+logo
