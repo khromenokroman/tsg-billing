@@ -146,9 +146,32 @@ systemctl status tsg-billing
 
 По умолчанию сервер доступен на: http://localhost
 
+## Docker
+
+Образ `ghcr.io/khromenokroman/tsg-billing` (теги версий и `latest`, 80 МБ, Debian 13 slim, работает от
+пользователя uid 10001). Установка на машине с Docker:
+
+```bash
+sudo apt install docker.io docker-compose
+mkdir tsg-billing && cd tsg-billing
+wget https://raw.githubusercontent.com/khromenokroman/tsg-billing/master/docker-compose.yml
+wget -O cfg.json https://raw.githubusercontent.com/khromenokroman/tsg-billing/master/docker/cfg.json
+# вписать в cfg.json наименование получателя и реквизиты, path_db не менять
+sudo docker-compose up -d
+```
+
+Интерфейс: http://адрес:8080/. База участников в томе `tsg-billing-data` (`/data/tsg-billing.json` в
+контейнере), при первом запуске пуста. Настройки берутся из `cfg.json` рядом с `docker-compose.yml`
+(файл должен быть доступен на чтение всем: `chmod 644 cfg.json`), после правки:
+`sudo docker-compose restart`. Журнал: `sudo docker-compose logs`. Обновление: `sudo docker-compose pull &&
+sudo docker-compose up -d`. Авторизации нет, поэтому порт открывать только в доверенной сети.
+
+Проверка образа: `docker build -t tsg-billing:test . && tests/docker_run.sh tsg-billing:test`.
+
 ## Релиз
 
-CI собирает DEB-пакеты под Debian 12 и Debian 13. Для публикации релиза
+CI собирает DEB-пакеты под Debian 12 и Debian 13, собирает и проверяет образ Docker (по тегу публикует
+его в GHCR). Для публикации релиза
 достаточно поставить тег, совпадающий с версией в `CMakeLists.txt`:
 
 ```bash
