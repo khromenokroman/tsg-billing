@@ -1,19 +1,25 @@
 #include "tsg-billing.hpp"
 
+#include <fcntl.h>
 #include <fmt/format.h>
 #include <qrencode.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #include <cmath>
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 
-TSGBilling::TSGBilling() {
-    openlog("TSGbilling", LOG_PID | LOG_CONS, LOG_USER);
+TSGBilling::TSGBilling(std::string file_cfg_path) : m_file_cfg{std::move(file_cfg_path)} {
+    // вне systemd (Docker, терминал) syslog может отсутствовать: дублируем записи в stderr
+    int const log_options = std::getenv("JOURNAL_STREAM") == nullptr ? LOG_PID | LOG_CONS | LOG_PERROR : LOG_PID | LOG_CONS;
+    openlog("TSGbilling", log_options, LOG_USER);
 
-    std::ifstream file_cfg(m_file_cfg.data());
+    std::ifstream file_cfg(m_file_cfg);
     if (!file_cfg.is_open()) {
         auto err = errno;
-        syslog(LOG_ERR, "Не могу открыть настройки(%s): %s", m_file_cfg.data(), strerror(err));
+        syslog(LOG_ERR, "Не могу открыть настройки(%s): %s", m_file_cfg.c_str(), strerror(err));
         throw std::runtime_error(::fmt::format("Не могу открыть настройки({}): {}", m_file_cfg, strerror(err)));
     }
     ::nlohmann::json cfg;
@@ -161,7 +167,14 @@ void TSGBilling::run() {
     syslog(LOG_NOTICE, "Запущен сервер на http://127.0.0.1:%d", m_config.port);
     m_server.listen("0.0.0.0", m_config.port);
 }
+void TSGBilling::stop() { m_server.stop(); }
 void TSGBilling::load_users() {
+    std::error_code ec;
+    if (!std::filesystem::exists(m_config.path_db, ec) && !ec) {
+        // первый запуск: базы ещё нет, она появится при первом сохранении
+        m_members.clear();
+        return;
+    }
     std::ifstream file(m_config.path_db);
     if (!file.is_open()) {
         auto err = errno;
@@ -176,16 +189,52 @@ void TSGBilling::load_users() {
     m_members = j.get<members>();
 }
 void TSGBilling::save_data() {
-    ::nlohmann::json j = ::nlohmann::json(m_members);
+    auto const data = ::nlohmann::json(m_members).dump();
 
-    std::ofstream file(m_config.path_db);
-    if (!file.is_open()) {
-        auto err = errno;
-        syslog(LOG_ERR, "Не могу открыть БД(%s): %s", m_config.path_db.c_str(), strerror(err));
-        throw std::runtime_error(::fmt::format("Не могу открыть БД({}): {}", m_config.path_db.c_str(), strerror(err)));
+    // атомарная замена: временный файл, fsync, rename, fsync каталога; сбой не оставит базу недописанной
+    auto const tmp = m_config.path_db + ".tmp";
+    auto const fail = [&tmp](std::string_view action, int fd) {
+        auto const err = errno;
+        if (fd >= 0) {
+            ::close(fd);
+        }
+        ::unlink(tmp.c_str());
+        syslog(LOG_ERR, "Не могу %s БД(%s): %s", std::string{action}.c_str(), tmp.c_str(), strerror(err));
+        throw std::runtime_error(::fmt::format("Не могу {} БД({}): {}", action, tmp, strerror(err)));
+    };
+    int const fd = ::open(tmp.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
+    if (fd < 0) {
+        fail("создать", -1);
     }
-    file << j;
-    syslog(LOG_INFO, "Данные записаны в БД:\n%s", j.dump(2).c_str());
+    std::string_view rest{data};
+    while (!rest.empty()) {
+        auto const n = ::write(fd, rest.data(), rest.size());
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            fail("записать", fd);
+        }
+        rest.remove_prefix(static_cast<std::size_t>(n));
+    }
+    if (::fsync(fd) != 0) {
+        fail("сбросить на диск", fd);
+    }
+    if (::close(fd) != 0) {
+        fail("закрыть", -1);
+    }
+    if (::rename(tmp.c_str(), m_config.path_db.c_str()) != 0) {
+        fail("переименовать", -1);
+    }
+    auto dir = std::filesystem::path{m_config.path_db}.parent_path().string();
+    if (dir.empty()) {
+        dir = ".";
+    }
+    if (int const dfd = ::open(dir.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC); dfd >= 0) {
+        ::fsync(dfd);
+        ::close(dfd);
+    }
+    syslog(LOG_INFO, "Данные записаны в БД:\n%s", ::nlohmann::json(m_members).dump(2).c_str());
 }
 std::string TSGBilling::build_index_page() const {
     std::ostringstream out;

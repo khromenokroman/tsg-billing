@@ -1,0 +1,15 @@
+# Запуск tsg-billing в Docker: docker compose up -d, интерфейс http://адрес:8080/
+# Рядом с этим файлом нужен cfg.json с реквизитами (образец docker/cfg.json), path_db оставить /data/tsg-billing.json.
+# База участников в томе tsg-billing-data. Авторизации нет: только доверенная сеть.
+services:
+  tsg-billing:
+    image: ghcr.io/khromenokroman/tsg-billing:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - tsg-billing-data:/data
+      - ./cfg.json:/etc/tsg-billing/cfg.json:ro
+
+volumes:
+  tsg-billing-data:

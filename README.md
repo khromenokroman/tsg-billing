@@ -106,7 +106,7 @@ apt install -y ./tsg-billing_<версия>_amd64.deb
 ````
 
 - `port` — порт, на котором запускается HTTP-сервер
-- `log_level` — уровень логирования для `syslog`
+- `log_level` — уровень логирования для `syslog`; на `LOG_INFO` (6) в журнал на каждый запрос пишется вся база (ФИО, адреса), для постоянной работы достаточно `LOG_NOTICE` (5). Вне systemd (Docker, терминал) записи журнала дублируются в stderr
 - `path_db` — путь до БД
 - `receiver_name` — наименование получателя платежей
 - `qr_payee_inn`, `qr_payee_kpp`, `qr_bank_name`, `qr_bic`, `qr_personal_acc`, `qr_corresp_acc` — реквизиты получателя платежей. Используются как для строки «Реквизиты:» в квитанции, так и для платёжного QR-кода (формат ST00012, ГОСТ Р 56042-2014); QR распознаётся приложениями Сбербанк Онлайн, Т-Банк, ВТБ и др. Незаполненные поля просто пропускаются в строке реквизитов; если `qr_personal_acc` или `qr_bic` не заданы — QR-код на квитанции не печатается
@@ -124,6 +124,12 @@ apt install -y ./tsg-billing_<версия>_amd64.deb
 
 ## Запуск
 
+Единственный аргумент — путь к настройкам, по умолчанию `/etc/tsg-billing/cfg.json`:
+
+```bash
+./build/tsg-billing configuration/cfg.json
+```
+
 После установки сервис можно запускать так:
 
 ```bash 
@@ -140,9 +146,32 @@ systemctl status tsg-billing
 
 По умолчанию сервер доступен на: http://localhost
 
+## Docker
+
+Образ `ghcr.io/khromenokroman/tsg-billing` (теги версий и `latest`, 80 МБ, Debian 13 slim, работает от
+пользователя uid 10001). Установка на машине с Docker:
+
+```bash
+sudo apt install docker.io docker-compose
+mkdir tsg-billing && cd tsg-billing
+wget https://raw.githubusercontent.com/khromenokroman/tsg-billing/master/docker-compose.yml
+wget -O cfg.json https://raw.githubusercontent.com/khromenokroman/tsg-billing/master/docker/cfg.json
+# вписать в cfg.json наименование получателя и реквизиты, path_db не менять
+sudo docker-compose up -d
+```
+
+Интерфейс: http://адрес:8080/. База участников в томе `tsg-billing-data` (`/data/tsg-billing.json` в
+контейнере), при первом запуске пуста. Настройки берутся из `cfg.json` рядом с `docker-compose.yml`
+(файл должен быть доступен на чтение всем: `chmod 644 cfg.json`), после правки:
+`sudo docker-compose restart`. Журнал: `sudo docker-compose logs`. Обновление: `sudo docker-compose pull &&
+sudo docker-compose up -d`. Авторизации нет, поэтому порт открывать только в доверенной сети.
+
+Проверка образа: `docker build -t tsg-billing:test . && tests/docker_run.sh tsg-billing:test`.
+
 ## Релиз
 
-CI собирает DEB-пакеты под Debian 12 и Debian 13. Для публикации релиза
+CI собирает DEB-пакеты под Debian 12 и Debian 13, собирает и проверяет образ Docker (по тегу публикует
+его в GHCR). Для публикации релиза
 достаточно поставить тег, совпадающий с версией в `CMakeLists.txt`:
 
 ```bash
