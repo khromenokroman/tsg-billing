@@ -5,15 +5,18 @@
 #include <syslog.h>
 
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 
-TSGBilling::TSGBilling() {
-    openlog("TSGbilling", LOG_PID | LOG_CONS, LOG_USER);
+TSGBilling::TSGBilling(std::string file_cfg_path) : m_file_cfg{std::move(file_cfg_path)} {
+    // вне systemd (Docker, терминал) syslog может отсутствовать: дублируем записи в stderr
+    int const log_options = std::getenv("JOURNAL_STREAM") == nullptr ? LOG_PID | LOG_CONS | LOG_PERROR : LOG_PID | LOG_CONS;
+    openlog("TSGbilling", log_options, LOG_USER);
 
-    std::ifstream file_cfg(m_file_cfg.data());
+    std::ifstream file_cfg(m_file_cfg);
     if (!file_cfg.is_open()) {
         auto err = errno;
-        syslog(LOG_ERR, "Не могу открыть настройки(%s): %s", m_file_cfg.data(), strerror(err));
+        syslog(LOG_ERR, "Не могу открыть настройки(%s): %s", m_file_cfg.c_str(), strerror(err));
         throw std::runtime_error(::fmt::format("Не могу открыть настройки({}): {}", m_file_cfg, strerror(err)));
     }
     ::nlohmann::json cfg;

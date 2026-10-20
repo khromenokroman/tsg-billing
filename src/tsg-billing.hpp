@@ -64,8 +64,9 @@ class TSGBilling {
      * @brief Конструктор приложения.
      *
      * Загружает конфигурацию и инициализирует логирование.
+     * @param file_cfg_path Путь к файлу настроек.
      */
-    TSGBilling();
+    explicit TSGBilling(std::string file_cfg_path);
 
     /**
      * @brief Запускает HTTP-сервер и регистрирует маршруты.
@@ -175,8 +176,8 @@ class TSGBilling {
      */
     [[nodiscard]] double to_double(std::string_view s) const;
 
-    httplib::Server m_server;                                 // 752
-    Config m_config;                                          // 104
-    members m_members;                                        // 24
-    std::string_view m_file_cfg{"/etc/tsg-billing/cfg.json"}; // 16
+    httplib::Server m_server; // 752
+    Config m_config;          // 104
+    std::string m_file_cfg;   // 32
+    members m_members;        // 24
 };
