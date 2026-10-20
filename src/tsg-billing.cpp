@@ -164,6 +164,7 @@ void TSGBilling::run() {
     syslog(LOG_NOTICE, "Запущен сервер на http://127.0.0.1:%d", m_config.port);
     m_server.listen("0.0.0.0", m_config.port);
 }
+void TSGBilling::stop() { m_server.stop(); }
 void TSGBilling::load_users() {
     std::ifstream file(m_config.path_db);
     if (!file.is_open()) {

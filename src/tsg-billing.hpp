@@ -73,6 +73,11 @@ class TSGBilling {
      */
     void run();
 
+    /**
+     * @brief Останавливает HTTP-сервер, run() после этого возвращает управление.
+     */
+    void stop();
+
    private:
     /**
      * @brief Загружает список участников из JSON-базы.
